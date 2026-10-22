@@ -16,7 +16,7 @@
 | File | Contains |
 | --- | --- |
 | `seed/authors.json` | VERBATIM below |
-| `seed/skills/*.md` | The 30 skill files provided with this plan. Copy them into `seed/skills/` before running this step. The file name is the slug |
+| `seed/skills/*.md` | Copy all 30 files from `build-plan/seed-skills/` into `seed/skills/`, unchanged. The file name is the slug |
 | `seed/seed.ts` | VERBATIM below |
 
 `seed/authors.json`, **VERBATIM**:
@@ -132,6 +132,7 @@ Add `"db:seed": "tsx seed/seed.ts"` to `package.json` scripts.
 
 ## Checks
 
+- `seed/skills/` holds the same 30 files as `build-plan/seed-skills/` (`diff -r build-plan/seed-skills seed/skills` prints nothing).
 - `npm run db:seed` prints `Seeded 8 authors and 30 skills.`
 - Running it twice in a row still gives exactly 30 skills and 30 activities (check with Supabase MCP `execute_sql`: `select count(*) from skills;` and `select count(*) from activities;`).
 
@@ -141,6 +142,7 @@ Append this block to the end of `MEMORY.md`, **VERBATIM**:
 
 ```md
 ## After step 04
+- seed/skills/ holds the 30 skill files copied from build-plan/seed-skills/.
 - npm run db:seed resets all skills, stars, comments, follows, notifications and activities, then loads 8 seed authors (ids start with seed_) and 30 public skills.
 ```
 
