@@ -10,3 +10,6 @@ Never edit earlier blocks.
 - AGENTS.md: our rules on top; the Next.js and PostHog blocks below are tool-managed and never edited.
 - MCP servers in .mcp.json: clerk, supabase (scoped by SUPABASE_PROJECT_REF), posthog.
 - Committed skills: Clerk, Supabase and four PostHog skills in .agents/skills/.
+
+## After step 01
+- PRODUCT.md, TRACKING_PLAN.md and DECISIONS.md exist. The tracking plan is the only source of event names.
