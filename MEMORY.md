@@ -13,3 +13,7 @@ Never edit earlier blocks.
 
 ## After step 01
 - PRODUCT.md, TRACKING_PLAN.md and DECISIONS.md exist. The tracking plan is the only source of event names.
+
+## After step 02
+- Design tokens, fonts and Clerk's shadcn theme CSS are in app/globals.css. Light theme only.
+- Shared components: HiveMark, SiteHeader (signed-out only), SiteFooter, EmptyState, not-found page.
