@@ -24,3 +24,7 @@ Never edit earlier blocks.
 - Triggers create activities and notifications and keep skills.stars_count correct. App code never does these.
 - search_skills(q, stack_filter) RPC returns up to 30 visible skills, ranked. slug_taken(candidate) checks every slug, including private ones.
 - lib/supabase/types.ts is generated (npm run db:types). lib/constants.ts, lib/slug.ts, lib/time.ts exist.
+
+## After step 04
+- seed/skills/ holds the 30 skill files copied from build-plan/seed-skills/.
+- npm run db:seed resets all skills, stars, comments, follows, notifications and activities, then loads 8 seed authors (ids start with seed_) and 30 public skills.

@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:types": "npx supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" --schema public > lib/supabase/types.ts"
+    "db:types": "npx supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" --schema public > lib/supabase/types.ts",
+    "db:seed": "tsx seed/seed.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "7.9.19",

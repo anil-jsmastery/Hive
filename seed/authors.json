@@ -1,0 +1,10 @@
+[
+  { "id": "seed_priya", "handle": "priya", "display_name": "Priya Raman", "stack": "Next.js" },
+  { "id": "seed_marco", "handle": "marco", "display_name": "Marco Bellini", "stack": "React" },
+  { "id": "seed_lena", "handle": "lena", "display_name": "Lena Hoffmann", "stack": "Python" },
+  { "id": "seed_sam", "handle": "sam", "display_name": "Sam Okafor", "stack": "Node.js" },
+  { "id": "seed_aisha", "handle": "aisha", "display_name": "Aisha Khan", "stack": "Any" },
+  { "id": "seed_tom", "handle": "tom", "display_name": "Tom Varga", "stack": "Go" },
+  { "id": "seed_kenji", "handle": "kenji", "display_name": "Kenji Mori", "stack": "Next.js" },
+  { "id": "seed_nora", "handle": "nora", "display_name": "Nora Lind", "stack": "Python" }
+]
