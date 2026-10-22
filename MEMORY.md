@@ -17,3 +17,10 @@ Never edit earlier blocks.
 ## After step 02
 - Design tokens, fonts and Clerk's shadcn theme CSS are in app/globals.css. Light theme only.
 - Shared components: HiveMark, SiteHeader (signed-out only), SiteFooter, EmptyState, not-found page.
+
+## After step 03
+- Supabase tables: profiles, organizations, skills, stars, comments, follows, notifications, activities. All have RLS.
+- RLS reads Clerk's session token: requesting_user_id() = sub, requesting_org_id() = active organization.
+- Triggers create activities and notifications and keep skills.stars_count correct. App code never does these.
+- search_skills(q, stack_filter) RPC returns up to 30 visible skills, ranked. slug_taken(candidate) checks every slug, including private ones.
+- lib/supabase/types.ts is generated (npm run db:types). lib/constants.ts, lib/slug.ts, lib/time.ts exist.
