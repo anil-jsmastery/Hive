@@ -28,3 +28,8 @@ Never edit earlier blocks.
 ## After step 04
 - seed/skills/ holds the 30 skill files copied from build-plan/seed-skills/.
 - npm run db:seed resets all skills, stars, comments, follows, notifications and activities, then loads 8 seed authors (ids start with seed_) and 30 public skills.
+
+## After step 05
+- PostHog helpers: lib/analytics/events.ts (the only event list), server.ts (trackServer with optional orgId, setPersonProperties, identifyOrganization, getFlag), client.ts (trackClient).
+- instrumentation-client.ts initializes posthog-js with autocapture off and registers swarm properties from the URL.
+- TrackOnMount fires a client event once per mount.
