@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/empty-state";
 import { SkillCard } from "@/components/explore/skill-card";
 import { NotificationList } from "@/components/dashboard/notification-list";
 import { listNotifications } from "@/lib/queries/notifications";
+import { ensureOrganization } from "@/lib/organization";
 import { CARD_FIELDS, type SkillCardData } from "@/lib/queries/search";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -18,15 +19,28 @@ async function mySkills(userId: string, forks: boolean): Promise<SkillCardData[]
   return (data ?? []) as unknown as SkillCardData[];
 }
 
+async function teamSkills(orgId: string): Promise<SkillCardData[]> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from("skills")
+    .select(CARD_FIELDS)
+    .eq("org_id", orgId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as SkillCardData[];
+}
+
 export default async function DashboardPage() {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
   if (!userId) redirect("/sign-in?redirect_url=/dashboard");
 
-  const [notifications, skills, forks] = await Promise.all([
+  const [notifications, skills, forks, org] = await Promise.all([
     listNotifications(),
     mySkills(userId, false),
     mySkills(userId, true),
+    orgId ? ensureOrganization() : null,
   ]);
+  const team = org ? await teamSkills(org.id) : [];
 
   return (
     <div className="space-y-8">
@@ -75,6 +89,28 @@ export default async function DashboardPage() {
           </div>
         )}
       </section>
+      {org ? (
+        <section className="space-y-3">
+          <h2 className="font-display text-2xl font-semibold">Team skills: {org.name}</h2>
+          {team.length === 0 ? (
+            <EmptyState
+              title="No team skills yet"
+              body="Publish a skill as your team to see it here."
+              action={
+                <Button asChild>
+                  <Link href="/publish">Publish a skill</Link>
+                </Button>
+              }
+            />
+          ) : (
+            <div className="grid gap-3">
+              {team.map((skill) => (
+                <SkillCard key={skill.slug} skill={skill} />
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
     </div>
   );
 }

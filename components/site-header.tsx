@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Show, SignInButton } from "@clerk/nextjs";
+import { OrganizationSwitcher, Show, SignInButton } from "@clerk/nextjs";
 import { LayoutDashboard, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HiveMark } from "@/components/hive-mark";
@@ -62,6 +62,12 @@ export async function SiteHeader() {
                 {badge ? <span className="absolute -top-0.5 -right-0.5">{badge}</span> : null}
               </Link>
             </Button>
+            <OrganizationSwitcher
+              hidePersonal={false}
+              afterCreateOrganizationUrl="/dashboard"
+              afterSelectOrganizationUrl="/dashboard"
+              afterSelectPersonalUrl="/dashboard"
+            />
             <UserMenu handle={profile?.handle ?? null} />
           </div>
         </Show>

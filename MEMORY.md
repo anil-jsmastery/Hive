@@ -69,3 +69,8 @@ Never edit earlier blocks.
 ## After step 13
 - /dashboard: Notifications (openNotification marks read, sends notification_clicked, redirects), Your skills, Your forks.
 - Header Dashboard link shows unreadCount() from lib/queries/notifications.ts.
+
+## After step 14
+- Clerk organizations are Hive teams. OrganizationSwitcher in the header (personal accounts allowed, slugs on).
+- /o/[slug] team page. Publish as personal or team (owner field). Dashboard "Team skills" when a team is active.
+- Team actions carry the PostHog organization group (client group + server orgId + identifyOrganization).

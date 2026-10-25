@@ -17,12 +17,21 @@ function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-sm text-destructive">{message}</p> : null;
 }
 
-export function PublishForm({ variant }: { variant: Variant }) {
+export function PublishForm({
+  variant,
+  handle,
+  teamName,
+}: {
+  variant: Variant;
+  handle: string;
+  teamName: string | null;
+}) {
   const [state, formAction, pending] = useActionState<PublishState, FormData>(publishSkill.bind(null, variant), {});
   // Controlled fields keep their values after a failed submit.
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [stack, setStack] = useState("");
+  const [owner, setOwner] = useState("personal");
   const [tags, setTags] = useState("");
   const [content, setContent] = useState("");
   const errors: Partial<Record<PublishField, string>> = state.errors ?? {};
@@ -49,6 +58,22 @@ export function PublishForm({ variant }: { variant: Variant }) {
         <FieldError message={errors.title} />
         <p className="text-sm text-muted-foreground">Your skill will live at /s/{slugify(title) || "your-skill"}</p>
       </div>
+
+      {teamName ? (
+        <div className="space-y-2">
+          <Label htmlFor="publish-owner">Publish as</Label>
+          <Select name="owner" value={owner} onValueChange={setOwner}>
+            <SelectTrigger id="publish-owner" className="w-full sm:w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="personal">Personal (@{handle})</SelectItem>
+              <SelectItem value="team">{teamName}</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">Team skills show your team’s name and live on its team page.</p>
+        </div>
+      ) : null}
 
       <div className="space-y-2">
         <Label htmlFor="publish-description">Description</Label>
