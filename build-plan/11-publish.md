@@ -160,8 +160,11 @@ export async function publishSkill(variant: Variant, _prev: PublishState, formDa
 
 Each field error shows directly under its field. The form keeps its values after a failed submit (from `state.values`). In this step the form ignores `state.paywall`; Step 16 handles it.
 
+**Submit through `onSubmit`, not the form's `action` prop.** React 19 resets a form after its `action` runs. Text inputs come back from `state.values`, but shadcn `Select` and `RadioGroup` fields fall back to their defaults, so Stack (and later Publish as and Visibility) would empty out after every failed submit or paywall. Instead: `<form onSubmit={(e) => { e.preventDefault(); const data = new FormData(e.currentTarget); startTransition(() => formAction(data)); }}>`, where `formAction` comes from `useActionState` and `startTransition` from `useTransition`. Every field added to this form in later steps follows the same pattern.
+
 ## Checks
 
+- Pick a Stack, leave Title empty and submit: the Title error shows and the Stack select still shows your choice.
 - Opening `/publish` sends one `publish_started` with `variant: control`.
 - Submitting an empty form shows 5 field errors and the top alert, and sends no `skill_published`.
 - A valid submit creates the skill, sends `skill_published` with `visibility: public` and `owner: personal`, and lands on the skill page with the "Published" toast.
@@ -174,6 +177,7 @@ Append this block to the end of `MEMORY.md`, **VERBATIM**:
 ```md
 ## After step 11
 - /publish: PublishForm (useActionState) with title, description, stack, tags, Write/Preview content. publish_started on mount.
+- PublishForm submits through onSubmit + startTransition(formAction), never the form's action prop, so React 19 doesn't reset its Select and RadioGroup fields.
 - app/publish/actions.ts publishSkill(variant, ...): validates with lib/validation.ts, checks plan features for private skills (returns paywall), publishes as team via ensureOrganization() when owner=team, sends skill_published.
 - lib/organization.ts ensureOrganization() upserts the active Clerk organization into Supabase and identifies the PostHog group.
 ```
