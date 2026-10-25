@@ -57,3 +57,8 @@ Never edit earlier blocks.
 ## After step 10
 - forkSkill (public skills only, forks are public and personal, skill_forked) and postComment (1–500 chars, comment_posted) in app/s/[slug]/actions.ts.
 - Comments section on the skill page. Notifications and activities for forks and comments come from triggers.
+
+## After step 11
+- /publish: PublishForm (useActionState) with title, description, stack, tags, Write/Preview content. publish_started on mount.
+- app/publish/actions.ts publishSkill(variant, ...): validates with lib/validation.ts, checks plan features for private skills (returns paywall), publishes as team via ensureOrganization() when owner=team, sends skill_published.
+- lib/organization.ts ensureOrganization() upserts the active Clerk organization into Supabase and identifies the PostHog group.

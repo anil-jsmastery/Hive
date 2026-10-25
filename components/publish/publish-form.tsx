@@ -1,0 +1,129 @@
+"use client";
+import { useActionState, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Markdown } from "@/components/skill/markdown";
+import { publishSkill, type PublishField, type PublishState } from "@/app/publish/actions";
+import type { Variant } from "@/lib/analytics/events";
+import { STACKS } from "@/lib/constants";
+import { slugify } from "@/lib/slug";
+
+function FieldError({ message }: { message?: string }) {
+  return message ? <p className="text-sm text-destructive">{message}</p> : null;
+}
+
+export function PublishForm({ variant }: { variant: Variant }) {
+  const [state, formAction, pending] = useActionState<PublishState, FormData>(publishSkill.bind(null, variant), {});
+  // Controlled fields keep their values after a failed submit.
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [stack, setStack] = useState("");
+  const [tags, setTags] = useState("");
+  const [content, setContent] = useState("");
+  const errors: Partial<Record<PublishField, string>> = state.errors ?? {};
+
+  return (
+    <form action={formAction} className="space-y-8">
+      <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">Publish a skill</h1>
+
+      {state.formError ? (
+        <Alert variant="destructive">
+          <AlertDescription>{state.formError}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div className="space-y-2">
+        <Label htmlFor="publish-title">Title</Label>
+        <Input
+          id="publish-title"
+          name="title"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          aria-invalid={errors.title ? true : undefined}
+        />
+        <FieldError message={errors.title} />
+        <p className="text-sm text-muted-foreground">Your skill will live at /s/{slugify(title) || "your-skill"}</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="publish-description">Description</Label>
+        <Input
+          id="publish-description"
+          name="description"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          aria-invalid={errors.description ? true : undefined}
+        />
+        <FieldError message={errors.description} />
+        <p className="text-sm text-muted-foreground">One sentence on what the skill does.</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="publish-stack">Stack</Label>
+        <Select name="stack" value={stack} onValueChange={setStack}>
+          <SelectTrigger id="publish-stack" className="w-full sm:w-64" aria-invalid={errors.stack ? true : undefined}>
+            <SelectValue placeholder="Choose a stack" />
+          </SelectTrigger>
+          <SelectContent>
+            {STACKS.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <FieldError message={errors.stack} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="publish-tags">Tags</Label>
+        <Input
+          id="publish-tags"
+          name="tags"
+          value={tags}
+          onChange={(event) => setTags(event.target.value)}
+          aria-invalid={errors.tags ? true : undefined}
+        />
+        <FieldError message={errors.tags} />
+        <p className="text-sm text-muted-foreground">Comma-separated, up to 5. Example: auth, nextjs</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="publish-content">Skill content</Label>
+        {/* The Write tab unmounts while Preview is open, so the value is posted from here. */}
+        <input type="hidden" name="content" value={content} />
+        <Tabs defaultValue="write">
+          <TabsList>
+            <TabsTrigger value="write">Write</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
+          <TabsContent value="write">
+            <Textarea
+              id="publish-content"
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              placeholder={"# Skill name\nWhen should an agent use this skill?"}
+              className="min-h-[320px] font-mono"
+              aria-invalid={errors.content ? true : undefined}
+            />
+          </TabsContent>
+          <TabsContent value="preview">
+            <div className="min-h-[320px] rounded-md border bg-card p-4">
+              <Markdown content={content} />
+            </div>
+          </TabsContent>
+        </Tabs>
+        <FieldError message={errors.content} />
+      </div>
+
+      <Button type="submit" disabled={pending}>
+        {pending ? "Publishing…" : "Publish skill"}
+      </Button>
+    </form>
+  );
+}
