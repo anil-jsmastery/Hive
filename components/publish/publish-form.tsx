@@ -1,5 +1,5 @@
 "use client";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ export function PublishForm({
   teamName: string | null;
 }) {
   const [state, formAction, pending] = useActionState<PublishState, FormData>(publishSkill.bind(null, variant), {});
+  const [, startTransition] = useTransition();
   // Controlled fields keep their values after a failed submit.
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -107,7 +108,16 @@ export function PublishForm({
   }
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form
+      // Submitting through onSubmit skips React's automatic form reset, which would also
+      // reset the Radix Selects and RadioGroup (Publish as, Stack, Visibility).
+      onSubmit={(event) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        startTransition(() => formAction(formData));
+      }}
+      className="space-y-8"
+    >
       <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">Publish a skill</h1>
 
       {state.formError ? (
