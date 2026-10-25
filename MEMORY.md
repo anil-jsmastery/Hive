@@ -48,3 +48,8 @@ Never edit earlier blocks.
 - /explore: URL state (q, stack), search form, stack filter pills, SkillCard list from searchSkills() in lib/queries/search.ts (search_skills RPC).
 - Events: search_performed (TrackOnMount keyed by query and stack), search_result_opened (SkillCard).
 - SkillCard shows author, stack, team badge, Private badge, tags and stars.
+
+## After step 09
+- /s/[slug]: getSkill() and hasStarred() in lib/queries/skill.ts (RLS decides visibility).
+- app/s/[slug]/actions.ts: installSkill (skill_installed), toggleStar (skill_starred on star only). Star counts come from the trigger.
+- Client events: skill_viewed, share_link_opened. Toasts: "Install command copied", "Starred", "Star removed", "Link copied", "Published".
