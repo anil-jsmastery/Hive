@@ -40,3 +40,6 @@ Never edit earlier blocks.
 - lib/profile.ts getCurrentProfile() creates the profile on first sign-in and sends user_signed_up once.
 - AnalyticsIdentity identifies the Clerk user, resets on sign-out and sets the organization group.
 - /onboarding saves the stack to profiles and to PostHog person properties.
+
+## After step 07
+- Landing page: hero with one CTA (landing_cta_clicked) and an 8-row activity rail from latestActivity() in lib/queries/activity.ts.
