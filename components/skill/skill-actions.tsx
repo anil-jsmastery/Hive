@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Star } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { installSkill, toggleStar } from "@/app/s/[slug]/actions";
+import { forkSkill, installSkill, toggleStar } from "@/app/s/[slug]/actions";
 
 export function SkillActions({
   slug,
@@ -64,6 +64,19 @@ export function SkillActions({
     });
   }
 
+  function onFork() {
+    startTransition(async () => {
+      const result = await forkSkill(slug);
+      if ("needsAuth" in result) return goToSignIn();
+      if ("error" in result) {
+        toast.error(result.error);
+        return;
+      }
+      router.push(`/s/${result.slug}`);
+      toast("Forked to your skills");
+    });
+  }
+
   async function onShare() {
     await navigator.clipboard.writeText(`${location.origin}/s/${slug}?ref=share`);
     toast("Link copied");
@@ -79,9 +92,14 @@ export function SkillActions({
         {starred ? "Starred" : "Star"}
       </Button>
       {visibility === "public" ? (
-        <Button variant="ghost" onClick={onShare}>
-          Share
-        </Button>
+        <>
+          <Button variant="outline" onClick={onFork} disabled={pending}>
+            Fork
+          </Button>
+          <Button variant="ghost" onClick={onShare}>
+            Share
+          </Button>
+        </>
       ) : null}
     </div>
   );

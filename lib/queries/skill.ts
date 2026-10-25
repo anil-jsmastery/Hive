@@ -25,3 +25,14 @@ export async function hasStarred(skillId: string, userId: string | null) {
     .maybeSingle();
   return Boolean(data);
 }
+
+export async function getComments(skillId: string) {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from('comments')
+    .select('id, body, created_at, author:profiles!comments_author_id_fkey(handle)')
+    .eq('skill_id', skillId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return data;
+}

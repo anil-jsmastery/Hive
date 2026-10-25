@@ -7,6 +7,7 @@ import { TrackOnMount } from "@/components/analytics/track-on-mount";
 import { SkillActions } from "@/components/skill/skill-actions";
 import { Markdown } from "@/components/skill/markdown";
 import { ShareTracker } from "@/components/skill/share-tracker";
+import { Comments } from "@/components/skill/comments";
 import { getSkill, hasStarred } from "@/lib/queries/skill";
 
 export default async function SkillPage({ params }: PageProps<"/s/[slug]">) {
@@ -70,6 +71,7 @@ export default async function SkillPage({ params }: PageProps<"/s/[slug]">) {
       </header>
       <SkillActions key={skill.id} slug={skill.slug} visibility={visibility} initialStarred={starred} />
       <Markdown content={skill.content} />
+      <Comments skillId={skill.id} slug={skill.slug} signedIn={Boolean(userId)} />
       <TrackOnMount
         event="skill_viewed"
         properties={{ slug: skill.slug, stack: skill.stack, author_handle: authorHandle, visibility }}

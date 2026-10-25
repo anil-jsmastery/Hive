@@ -53,3 +53,7 @@ Never edit earlier blocks.
 - /s/[slug]: getSkill() and hasStarred() in lib/queries/skill.ts (RLS decides visibility).
 - app/s/[slug]/actions.ts: installSkill (skill_installed), toggleStar (skill_starred on star only). Star counts come from the trigger.
 - Client events: skill_viewed, share_link_opened. Toasts: "Install command copied", "Starred", "Star removed", "Link copied", "Published".
+
+## After step 10
+- forkSkill (public skills only, forks are public and personal, skill_forked) and postComment (1–500 chars, comment_posted) in app/s/[slug]/actions.ts.
+- Comments section on the skill page. Notifications and activities for forks and comments come from triggers.
