@@ -65,3 +65,7 @@ Never edit earlier blocks.
 
 ## After step 12
 - /u/[handle]: profile header, follower counts, Follow button (toggleFollow, not tracked on purpose), published skills.
+
+## After step 13
+- /dashboard: Notifications (openNotification marks read, sends notification_clicked, redirects), Your skills, Your forks.
+- Header Dashboard link shows unreadCount() from lib/queries/notifications.ts.

@@ -5,9 +5,15 @@ import { Button } from "@/components/ui/button";
 import { HiveMark } from "@/components/hive-mark";
 import { UserMenu } from "@/components/user-menu";
 import { getCurrentProfile } from "@/lib/profile";
+import { unreadCount } from "@/lib/queries/notifications";
 
 export async function SiteHeader() {
   const profile = await getCurrentProfile();
+  const unread = profile ? await unreadCount() : 0;
+  const badge =
+    unread > 0 ? (
+      <span className="rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">{unread}</span>
+    ) : null;
 
   return (
     <header className="sticky top-0 z-40 h-16 border-b bg-card">
@@ -45,11 +51,15 @@ export async function SiteHeader() {
         <Show when="signed-in">
           <div className="flex items-center gap-1">
             <Button variant="ghost" asChild className="hidden sm:inline-flex">
-              <Link href="/dashboard">Dashboard</Link>
+              <Link href="/dashboard">
+                Dashboard
+                {badge}
+              </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild className="sm:hidden">
-              <Link href="/dashboard" aria-label="Dashboard">
+              <Link href="/dashboard" aria-label="Dashboard" className="relative">
                 <LayoutDashboard className="size-5" />
+                {badge ? <span className="absolute -top-0.5 -right-0.5">{badge}</span> : null}
               </Link>
             </Button>
             <UserMenu handle={profile?.handle ?? null} />
