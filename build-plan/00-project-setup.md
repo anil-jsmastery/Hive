@@ -23,6 +23,29 @@ npx create-next-app@latest app-tmp --ts --eslint --tailwind --app --no-src-dir -
 
 Move everything from `app-tmp/` into this folder, **including dotfiles and `.git`**, then delete `app-tmp/`. Set `"name": "hive"` in `package.json`. Keep the `AGENTS.md` that `create-next-app` wrote (its Next.js block stays; see step 4). If it also wrote a `CLAUDE.md`, replace that file with ours in step 4.
 
+**Replace `next.config.ts`.** Next.js 16's `create-next-app` turns on Cache Components and partial prefetching. Every Hive page is rendered per user (it reads the Clerk session, and every Supabase query carries the user's token), and later steps rely on classic dynamic rendering. Replace the whole file, **VERBATIM**. It keeps the two things `create-next-app` set up that the project needs: the React Compiler, and the Turbopack rule that runs Tailwind on CSS files (there's no `postcss.config` file).
+
+```ts
+import type { NextConfig } from 'next';
+
+// Hive renders every page per user (Clerk session + Supabase RLS), so it uses
+// classic dynamic rendering: Cache Components and partial prefetching stay off.
+const nextConfig: NextConfig = {
+  cacheComponents: false,
+  reactCompiler: true,
+  turbopack: {
+    rules: {
+      '*.css': {
+        loaders: ['@tailwindcss/turbopack'],
+        as: '*.css',
+      },
+    },
+  },
+};
+
+export default nextConfig;
+```
+
 ## 2. Pin everything
 
 `.npmrc`, **VERBATIM**:
@@ -97,8 +120,9 @@ It installs the PostHog CLI on the user's machine and writes a `<posthog>` block
    messages, SQL, event names and property names in the step.
 5. Do not add pages, features, events, analytics calls, colors or components that
    the step and DESIGN.md don't list.
-6. All analytics go through lib/analytics/. Never import posthog-js or posthog-node
-   anywhere else. Never send emails or passwords to PostHog.
+6. All analytics go through lib/analytics/. Only lib/analytics/,
+   components/analytics/ and instrumentation-client.ts may import posthog-js or
+   posthog-node. Never send emails or passwords to PostHog.
 7. Server Components never send analytics events, because Next.js prefetching would
    fire them without a real visit. The one exception is user_signed_up, sent only
    when a profile row is actually created. Views are tracked on the client.
@@ -181,6 +205,7 @@ The Supabase server is scoped to one project, so the agent can never touch anoth
 
 - `npm ci && npm run build` passes from a clean `node_modules`.
 - `grep -E '"[\^~]' package.json` prints nothing, and `package.json` has `"name": "hive"`.
+- `next.config.ts` matches the VERBATIM block exactly.
 - `components.json` exists and says `radix`; `components/ui/` has the 15 components.
 - `.agents/skills/` has the Clerk, Supabase and four PostHog skills, linked from `.claude/skills/`.
 - `AGENTS.md` has our rules at the top, then the Next.js block, then the `<posthog>` block.
@@ -195,6 +220,7 @@ Append this block to the end of `MEMORY.md`, **VERBATIM**:
 ## After step 00
 - Next.js App Router app with Tailwind CSS and shadcn/ui (Radix base, preset bIkeymG). Packages are pinned; install with npm ci only.
 - .claude/settings.json pins the coding agent to claude-opus-5-5 at medium effort, ultracode off.
+- next.config.ts is fixed (VERBATIM): Cache Components and partial prefetching off, React Compiler on, Tailwind runs through the Turbopack CSS rule (no postcss.config). Pages render dynamically per user.
 - Memory: CLAUDE.md imports AGENTS.md, MEMORY.md, build-plan/CONTRACT.md and build-plan/DESIGN.md.
 - AGENTS.md: our rules on top; the Next.js and PostHog blocks below are tool-managed and never edited.
 - MCP servers in .mcp.json: clerk, supabase (scoped by SUPABASE_PROJECT_REF), posthog.

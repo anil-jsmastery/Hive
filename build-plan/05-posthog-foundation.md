@@ -15,6 +15,15 @@
 
 1. Create a **new project** named `Hive`, used only for this app.
 2. Copy the project API key and host into `.env.local` as `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST`.
+3. **Settings → Project → Web analytics:**
+
+   | Setting | Value | Why |
+   | --- | --- | --- |
+   | Enable cookieless tracking | **Off** | Hive identifies signed-in users, which needs the normal PostHog cookie |
+   | Bounce rate duration | **10** (the default) | Leave it |
+   | Enable web vitals autocapture | **Off** | It's a project setting that `autocapture: false` doesn't cover, and it sends a `$web_vitals` event after every page view |
+
+4. Some PostHog features are switched on from the project settings rather than from code. If live events shows any `$` event other than `$pageview`, `$pageleave` or `$exception`, find its setting in **Settings → Project** and turn it off. Session replay, heatmaps and exception autocapture are turned on deliberately in Step 15.
 
 ## Try the wizard first, then discard it
 
@@ -181,7 +190,7 @@ If the pinned `posthog-js` doesn't support an option above (for example `capture
 ## Checks
 
 - `npm run build` passes.
-- Opening `/` shows a `$pageview` in PostHog's live events, and nothing else (autocapture is off).
+- Opening `/` shows a `$pageview` in PostHog's live events, and nothing else: no `$autocapture` and no `$web_vitals`.
 - Ask the PostHog MCP: "List the events received in the last hour". It returns only `$pageview` (and `$pageleave`).
 
 ## Update project memory

@@ -24,9 +24,11 @@ import { createServerSupabase } from '@/lib/supabase/server';
 const SKILL_FIELDS = `id, slug, title, description, content, tags, stack, visibility, stars_count, author_id, org_id, created_at,
   author:profiles!skills_author_id_fkey(handle, display_name),
   org:organizations!skills_org_id_fkey(slug, name),
-  forked_from:skills!skills_forked_from_id_fkey(slug, title, author:profiles!skills_author_id_fkey(handle))`;
+  forked_from:forked_from_id(slug, title, author:profiles!skills_author_id_fkey(handle))`;
 
 // RLS decides visibility: a private skill the viewer can't see comes back as null.
+// forked_from embeds by column name: skills references itself, and a constraint-name
+// hint can't tell "the skill this was forked from" from "the skills that fork this".
 export async function getSkill(slug: string) {
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.from('skills').select(SKILL_FIELDS).eq('slug', slug).maybeSingle();
