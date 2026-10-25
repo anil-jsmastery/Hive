@@ -74,3 +74,6 @@ Never edit earlier blocks.
 - Clerk organizations are Hive teams. OrganizationSwitcher in the header (personal accounts allowed, slugs on).
 - /o/[slug] team page. Publish as personal or team (owner field). Dashboard "Team skills" when a team is active.
 - Team actions carry the PostHog organization group (client group + server orgId + identifyOrganization).
+
+## After step 15
+- Deployed on Vercel with the Clerk development instance. PostHog: replays, heatmaps and exception autocapture on, autocapture off, a test-account filter for cohort starting with swarm.
