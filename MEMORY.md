@@ -43,3 +43,8 @@ Never edit earlier blocks.
 
 ## After step 07
 - Landing page: hero with one CTA (landing_cta_clicked) and an 8-row activity rail from latestActivity() in lib/queries/activity.ts.
+
+## After step 08
+- /explore: URL state (q, stack), search form, stack filter pills, SkillCard list from searchSkills() in lib/queries/search.ts (search_skills RPC).
+- Events: search_performed (TrackOnMount keyed by query and stack), search_result_opened (SkillCard).
+- SkillCard shows author, stack, team badge, Private badge, tags and stars.
