@@ -15,7 +15,18 @@
 
 ## Dashboard checklist (Clerk, development instance)
 
-1. Create an application named `Hive`. Sign-in options: **Email** and **Password** on, **Username** on and **required**, phone off, all social connections off. Email verification: **code**.
+1. Create an application named `Hive`. Then set **User & authentication** exactly like this:
+
+   | Tab | Setting |
+   | --- | --- |
+   | Email | Sign-up with email **on**, Require email address **on**, Verify at sign-up **on** with **Email verification code** only. Sign-in with email **on**, Email verification code **on**, Email verification link **off** |
+   | Phone | Everything **off** |
+   | Username | Sign-up with username **on**, Require username **on**, Sign-in with username **off** |
+   | Password | **On** |
+   | Passkeys, Biometric | **Off** |
+   | User model | Defaults |
+   | SSO connections (sidebar) | All social connections **off** |
+
 2. Copy the publishable and secret keys into `.env.local`. Also add the four `NEXT_PUBLIC_CLERK_*` URL variables from `CONTRACT.md`.
 3. Open **Integrations → Supabase** (Clerk's Supabase integration setup) and select **Activate Supabase integration**. This adds the `role` claim Supabase needs. Copy the Clerk domain it shows.
 4. Keep the instance in **development**. The swarm needs its test emails (`+clerk_test`, code `424242`) and test mode.
@@ -39,6 +50,7 @@
 | `components/onboarding/stack-picker.tsx` | Client component: radio cards plus buttons |
 | `app/onboarding/actions.ts` | `saveStack(stack)` |
 | `components/site-header.tsx` | Wire in Clerk (spec below) |
+| `components/user-menu.tsx` | Client component `UserMenu({ handle })`: the `<UserButton>` with the Profile link (spec below) |
 
 `proxy.ts`, **VERBATIM**:
 
@@ -190,7 +202,7 @@ export function AnalyticsIdentity({ stack }: { stack: string | null }) {
 **Header, signed in** (`<Show when="signed-in">`), right side, in this order:
 
 1. A link "Dashboard" to `/dashboard`. In Step 13 it gets an unread badge.
-2. `<UserButton>` with one extra menu item: `<UserButton.MenuItems><UserButton.Link label="Profile" labelIcon={<UserIcon className="size-4" />} href={`/u/${profile.handle}`} /></UserButton.MenuItems>`.
+2. `<UserMenu handle={profile?.handle ?? null} />`. `UserMenu` is a client component (`'use client'`), because Clerk only recognizes `UserButton.MenuItems` and `UserButton.Link` when `<UserButton>` renders in a client component; from a Server Component they are ignored with a console error. It renders `<UserButton>` with one extra menu item, only when `handle` is set: `<UserButton.MenuItems><UserButton.Link label="Profile" labelIcon={<UserIcon className="size-4" />} href={`/u/${handle}`} /></UserButton.MenuItems>`.
 
 ## Checks
 

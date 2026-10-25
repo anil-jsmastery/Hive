@@ -1,9 +1,14 @@
 import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { Show, SignInButton } from "@clerk/nextjs";
+import { LayoutDashboard, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HiveMark } from "@/components/hive-mark";
+import { UserMenu } from "@/components/user-menu";
+import { getCurrentProfile } from "@/lib/profile";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const profile = await getCurrentProfile();
+
   return (
     <header className="sticky top-0 z-40 h-16 border-b bg-card">
       <div className="mx-auto flex h-full max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
@@ -32,9 +37,24 @@ export function SiteHeader() {
             </Link>
           </Button>
         </nav>
-        <Button asChild>
-          <Link href="/sign-in">Sign in</Link>
-        </Button>
+        <Show when="signed-out">
+          <SignInButton>
+            <Button>Sign in</Button>
+          </SignInButton>
+        </Show>
+        <Show when="signed-in">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" asChild className="hidden sm:inline-flex">
+              <Link href="/dashboard">Dashboard</Link>
+            </Button>
+            <Button variant="ghost" size="icon" asChild className="sm:hidden">
+              <Link href="/dashboard" aria-label="Dashboard">
+                <LayoutDashboard className="size-5" />
+              </Link>
+            </Button>
+            <UserMenu handle={profile?.handle ?? null} />
+          </div>
+        </Show>
       </div>
     </header>
   );

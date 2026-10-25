@@ -33,3 +33,10 @@ Never edit earlier blocks.
 - PostHog helpers: lib/analytics/events.ts (the only event list), server.ts (trackServer with optional orgId, setPersonProperties, identifyOrganization, getFlag), client.ts (trackClient).
 - instrumentation-client.ts initializes posthog-js with autocapture off and registers swarm properties from the URL.
 - TrackOnMount fires a client event once per mount.
+
+## After step 06
+- Clerk: ClerkProvider (shadcn theme), proxy.ts with clerkMiddleware, /sign-in and /sign-up pages, username required, development instance.
+- Supabase accepts Clerk session tokens (third-party auth). lib/supabase/server.ts createServerSupabase() is the only app client.
+- lib/profile.ts getCurrentProfile() creates the profile on first sign-in and sends user_signed_up once.
+- AnalyticsIdentity identifies the Clerk user, resets on sign-out and sets the organization group.
+- /onboarding saves the stack to profiles and to PostHog person properties.

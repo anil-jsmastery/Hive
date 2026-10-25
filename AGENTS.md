@@ -8,8 +8,9 @@
    messages, SQL, event names and property names in the step.
 5. Do not add pages, features, events, analytics calls, colors or components that
    the step and DESIGN.md don't list.
-6. All analytics go through lib/analytics/. Never import posthog-js or posthog-node
-   anywhere else. Never send emails or passwords to PostHog.
+6. All analytics go through lib/analytics/. Only lib/analytics/,
+   components/analytics/ and instrumentation-client.ts may import posthog-js or
+   posthog-node. Never send emails or passwords to PostHog.
 7. Server Components never send analytics events, because Next.js prefetching would
    fire them without a real visit. The one exception is user_signed_up, sent only
    when a profile row is actually created. Views are tracked on the client.
