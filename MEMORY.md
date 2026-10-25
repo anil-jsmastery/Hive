@@ -84,3 +84,8 @@ Never edit earlier blocks.
 - Publish form: Visibility field and PaywallDialog (paywall_shown). publishSkill gates private skills with has({ feature }).
 - Upgrading from the paywall: "See plans" saves the draft to sessionStorage (hive:publish-draft) and opens /pricing?from=publish; only then does PricingTable redirect to /publish?upgraded=1, where the draft is restored. Direct visits to /pricing stay there after paying.
 - app/api/webhooks/clerk/route.ts verifies Clerk webhooks: organization.created (upsert + organization_created), subscriptionItem.active/canceled (subscription_started/canceled, free plans ignored).
+
+## After step 17
+- swarm/ harness copied unchanged from build-plan/swarm/: Playwright agents with personas, Clerk testing tokens and +clerk_test accounts, test card for payments (iframes included), spread arrivals, saved sessions for the return wave, evidence-based success, structured output and retries. Browsers present as normal Chrome (so posthog-js doesn't drop them as bots) and have clipboard permission.
+- node swarm/cleanup.mjs --yes removes swarm test users, their teams and their data before each run.
+- Model: SWARM_MODEL in swarm/.env, any provider (openai, anthropic, gemini, deepseek, moonshot, openrouter, or compat for any OpenAI-compatible API); keys as SWARM_* in swarm/.env (git-ignored, never in the coding agent's shell). The chosen model is recorded in DECISIONS.md.
