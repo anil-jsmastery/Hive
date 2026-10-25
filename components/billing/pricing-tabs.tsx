@@ -7,8 +7,10 @@ import { TrackOnMount } from "@/components/analytics/track-on-mount";
 
 export type PricingTab = "personal" | "team";
 
-export function PricingTabs({ initialTab }: { initialTab: PricingTab }) {
+export function PricingTabs({ initialTab, fromPublish }: { initialTab: PricingTab; fromPublish: boolean }) {
   const [tab, setTab] = useState<PricingTab>(initialTab);
+  // Only upgrades started from the publish paywall return to the editor.
+  const redirect = fromPublish ? { newSubscriptionRedirectUrl: "/publish?upgraded=1" } : {};
   const { organization } = useOrganization();
 
   return (
@@ -18,11 +20,11 @@ export function PricingTabs({ initialTab }: { initialTab: PricingTab }) {
         <TabsTrigger value="team">For teams</TabsTrigger>
       </TabsList>
       <TabsContent value="personal">
-        <PricingTable />
+        <PricingTable {...redirect} />
       </TabsContent>
       <TabsContent value="team">
         {organization ? (
-          <PricingTable for="organization" />
+          <PricingTable for="organization" {...redirect} />
         ) : (
           <EmptyState
             title="No team selected"

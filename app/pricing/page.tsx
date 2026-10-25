@@ -3,6 +3,7 @@ import { PricingTabs, type PricingTab } from "@/components/billing/pricing-tabs"
 export default async function PricingPage({ searchParams }: PageProps<"/pricing">) {
   const params = await searchParams;
   const tab: PricingTab = params.tab === "team" ? "team" : "personal";
+  const fromPublish = params.from === "publish";
 
   return (
     <div className="space-y-8">
@@ -12,7 +13,7 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
           Public skills are free. Pay only when you need private ones.
         </p>
       </div>
-      <PricingTabs initialTab={tab} />
+      <PricingTabs initialTab={tab} fromPublish={fromPublish} />
     </div>
   );
 }

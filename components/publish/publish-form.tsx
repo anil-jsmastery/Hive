@@ -1,5 +1,6 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +10,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Lock } from "lucide-react";
+import { toast } from "sonner";
 import { Markdown } from "@/components/skill/markdown";
 import { PaywallDialog } from "@/components/billing/paywall-dialog";
 import { publishSkill, type PublishField, type PublishState } from "@/app/publish/actions";
 import type { Variant } from "@/lib/analytics/events";
 import { STACKS } from "@/lib/constants";
 import { slugify } from "@/lib/slug";
+
+const DRAFT_KEY = "hive:publish-draft";
+
+type Draft = {
+  title: string;
+  description: string;
+  stack: string;
+  owner: string;
+  tags: string;
+  content: string;
+  visibility: string;
+};
 
 function FieldError({ message }: { message?: string }) {
   return message ? <p className="text-sm text-destructive">{message}</p> : null;
@@ -43,6 +57,54 @@ export function PublishForm({
   const paywallOpen = Boolean(state.paywall) && dismissed !== state;
   const errors: Partial<Record<PublishField, string>> = state.errors ?? {};
   const asTeam = Boolean(teamName) && owner === "team";
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const draftChecked = useRef(false);
+
+  // After an upgrade from the paywall, bring back the draft saved by "See plans".
+  // The user still submits it themselves.
+  useEffect(() => {
+    if (draftChecked.current) return;
+    draftChecked.current = true;
+    const upgraded = searchParams.get("upgraded") === "1";
+    // A draft left behind without upgraded=1 is dropped.
+    let draft: Draft | null = null;
+    try {
+      const saved = sessionStorage.getItem(DRAFT_KEY);
+      sessionStorage.removeItem(DRAFT_KEY);
+      if (saved && upgraded) draft = JSON.parse(saved) as Draft;
+    } catch {
+      draft = null;
+    }
+    if (!upgraded) return;
+    if (draft) {
+      // sessionStorage only exists in the browser, so the draft can only be applied after hydration.
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setTitle(draft.title);
+      setDescription(draft.description);
+      setStack(draft.stack);
+      setOwner(draft.owner);
+      setTags(draft.tags);
+      setContent(draft.content);
+      setVisibility(draft.visibility);
+      /* eslint-enable react-hooks/set-state-in-effect */
+      toast("Your plan is active. Your draft is back, ready to publish.");
+    }
+    const params = new URLSearchParams(window.location.search);
+    params.delete("upgraded");
+    const search = params.toString();
+    router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
+  }, [router, pathname, searchParams]);
+
+  function saveDraft() {
+    const draft: Draft = { title, description, stack, owner, tags, content, visibility: "private" };
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      // Storage can be unavailable (private mode). The upgrade still works without the draft.
+    }
+  }
 
   return (
     <form action={formAction} className="space-y-8">
@@ -187,6 +249,7 @@ export function PublishForm({
         feature={state.paywall ?? null}
         open={paywallOpen}
         onClose={() => setDismissed(state)}
+        onSeePlans={saveDraft}
         onPublishPublic={() => {
           setVisibility("public");
           setDismissed(state);

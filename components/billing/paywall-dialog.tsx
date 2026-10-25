@@ -31,11 +31,13 @@ export function PaywallDialog({
   feature,
   open,
   onClose,
+  onSeePlans,
   onPublishPublic,
 }: {
   feature: Feature | null;
   open: boolean;
   onClose: () => void;
+  onSeePlans: () => void;
   onPublishPublic: () => void;
 }) {
   const copy = feature ? COPY[feature] : null;
@@ -56,7 +58,9 @@ export function PaywallDialog({
               Publish as public instead
             </Button>
             <Button asChild>
-              <Link href={`/pricing?tab=${copy.tab}`}>See plans</Link>
+              <Link href={`/pricing?tab=${copy.tab}&from=publish`} onClick={onSeePlans}>
+                See plans
+              </Link>
             </Button>
           </DialogFooter>
         </DialogContent>
