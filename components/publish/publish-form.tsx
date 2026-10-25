@@ -4,10 +4,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Lock } from "lucide-react";
 import { Markdown } from "@/components/skill/markdown";
+import { PaywallDialog } from "@/components/billing/paywall-dialog";
 import { publishSkill, type PublishField, type PublishState } from "@/app/publish/actions";
 import type { Variant } from "@/lib/analytics/events";
 import { STACKS } from "@/lib/constants";
@@ -33,8 +36,13 @@ export function PublishForm({
   const [stack, setStack] = useState("");
   const [owner, setOwner] = useState("personal");
   const [tags, setTags] = useState("");
+  const [visibility, setVisibility] = useState("public");
   const [content, setContent] = useState("");
+  // The paywall opens for every submit that returns one, until that result is dismissed.
+  const [dismissed, setDismissed] = useState<PublishState | null>(null);
+  const paywallOpen = Boolean(state.paywall) && dismissed !== state;
   const errors: Partial<Record<PublishField, string>> = state.errors ?? {};
+  const asTeam = Boolean(teamName) && owner === "team";
 
   return (
     <form action={formAction} className="space-y-8">
@@ -119,6 +127,31 @@ export function PublishForm({
       </div>
 
       <div className="space-y-2">
+        <Label id="publish-visibility">Visibility</Label>
+        <RadioGroup name="visibility" value={visibility} onValueChange={setVisibility} aria-labelledby="publish-visibility">
+          <div className="flex items-start gap-3">
+            <RadioGroupItem id="publish-visibility-public" value="public" className="mt-0.5" />
+            <div className="space-y-1">
+              <Label htmlFor="publish-visibility-public">Public</Label>
+              <p className="text-sm text-muted-foreground">Anyone can find and install it.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <RadioGroupItem id="publish-visibility-private" value="private" className="mt-0.5" />
+            <div className="space-y-1">
+              <Label htmlFor="publish-visibility-private">
+                <Lock className="size-4" />
+                Private
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {asTeam ? "Only your team can see it. Needs Team." : "Only you can see it. Needs Pro."}
+              </p>
+            </div>
+          </div>
+        </RadioGroup>
+      </div>
+
+      <div className="space-y-2">
         <Label htmlFor="publish-content">Skill content</Label>
         {/* The Write tab unmounts while Preview is open, so the value is posted from here. */}
         <input type="hidden" name="content" value={content} />
@@ -149,6 +182,16 @@ export function PublishForm({
       <Button type="submit" disabled={pending}>
         {pending ? "Publishing…" : "Publish skill"}
       </Button>
+
+      <PaywallDialog
+        feature={state.paywall ?? null}
+        open={paywallOpen}
+        onClose={() => setDismissed(state)}
+        onPublishPublic={() => {
+          setVisibility("public");
+          setDismissed(state);
+        }}
+      />
     </form>
   );
 }

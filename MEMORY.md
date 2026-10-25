@@ -77,3 +77,9 @@ Never edit earlier blocks.
 
 ## After step 15
 - Deployed on Vercel with the Clerk development instance. PostHog: replays, heatmaps and exception autocapture on, autocapture off, a test-account filter for cohort starting with swarm.
+
+## After step 16
+- Clerk Billing: Pro (user, private_skills, $8) and Team (organization, team_private_skills, $20) on the development gateway.
+- /pricing with For you / For teams tabs (pricing_viewed). Header has a Pricing link.
+- Publish form: Visibility field and PaywallDialog (paywall_shown). publishSkill gates private skills with has({ feature }).
+- app/api/webhooks/clerk/route.ts verifies Clerk webhooks: organization.created (upsert + organization_created), subscriptionItem.active/canceled (subscription_started/canceled, free plans ignored).

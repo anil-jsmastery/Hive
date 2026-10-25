@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { OrganizationSwitcher, Show, SignInButton } from "@clerk/nextjs";
-import { LayoutDashboard, Plus, Search } from "lucide-react";
+import { LayoutDashboard, Plus, Search, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HiveMark } from "@/components/hive-mark";
 import { UserMenu } from "@/components/user-menu";
@@ -30,11 +30,19 @@ export async function SiteHeader() {
             <Link href="/explore">Explore</Link>
           </Button>
           <Button variant="ghost" asChild className="hidden sm:inline-flex">
+            <Link href="/pricing">Pricing</Link>
+          </Button>
+          <Button variant="ghost" asChild className="hidden sm:inline-flex">
             <Link href="/publish">Publish</Link>
           </Button>
           <Button variant="ghost" size="icon" asChild className="sm:hidden">
             <Link href="/explore" aria-label="Explore">
               <Search className="size-5" />
+            </Link>
+          </Button>
+          <Button variant="ghost" size="icon" asChild className="sm:hidden">
+            <Link href="/pricing" aria-label="Pricing">
+              <Tag className="size-5" />
             </Link>
           </Button>
           <Button variant="ghost" size="icon" asChild className="sm:hidden">
