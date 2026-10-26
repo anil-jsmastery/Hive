@@ -36,31 +36,32 @@ Builders filled in the publish form, submitted, and got field errors, which is e
 
 ```ts
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { PublishField, PublishState } from '@/app/publish/actions';
 
 // publish-flow-v2, test variant: a field's error disappears as soon as its value
 // changes, instead of staying on screen until the next submit. With enabled =
 // false (the control), it returns the server's errors unchanged.
 export function useLiveErrors(state: PublishState, enabled: boolean) {
-  const [errors, setErrors] = useState<PublishState['errors']>(state.errors);
-
-  // Every submit returns a new state: start again from the server's errors.
-  useEffect(() => {
-    setErrors(state.errors);
-  }, [state]);
+  // Fields cleared since the last submit. Each submit returns a new state object,
+  // so cleared fields belong to the state they were cleared on, and reset by
+  // themselves when the next result arrives. No effect needed.
+  const [cleared, setCleared] = useState<{ state: PublishState; fields: PublishField[] }>({
+    state,
+    fields: [],
+  });
+  const clearedFields = cleared.state === state ? cleared.fields : [];
 
   function clear(field: PublishField) {
-    if (!enabled) return;
-    setErrors((prev) => {
-      if (!prev?.[field]) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
+    if (!enabled || clearedFields.includes(field) || !state.errors?.[field]) return;
+    setCleared({ state, fields: [...clearedFields, field] });
   }
 
-  const shown = enabled ? errors : state.errors;
+  const shown: PublishState['errors'] = enabled && state.errors
+    ? Object.fromEntries(
+        Object.entries(state.errors).filter(([field]) => !clearedFields.includes(field as PublishField)),
+      )
+    : state.errors;
   const remaining = Boolean(shown && Object.keys(shown).length);
   const fromFields = Boolean(state.errors && Object.keys(state.errors).length);
   // The top alert summarises field errors, so it goes once they're all fixed.
@@ -82,51 +83,47 @@ export function useLiveErrors(state: PublishState, enabled: boolean) {
    - Skill content textarea: in `onChange`, `clear('content')`.
 5. Nothing else changes: labels, help text, layout, submission through `onSubmit`, hidden inputs, the paywall and the draft restore all stay as they are.
 
-## Run the experiment
+## Checks (before the commit)
 
-The code above ships the fix to half of all builders (the `test` variant). Cohort B shows whether it works.
+- `git diff HEAD --stat` shows only `components/publish/use-live-errors.ts` and `components/publish/publish-form.tsx`. `lib/analytics/events.ts`, `lib/validation.ts` and `app/publish/actions.ts` are unchanged.
+- `npx tsc --noEmit`, `npm run lint` and `npm run build` pass. (The hook uses no effect, so the React hooks lint rules pass.)
+- On the dev server, with the two test users from Step 18 (one in each variant):
+  - **Control:** submit an empty form, then type a title. The title error **stays** until you submit again, exactly as before.
+  - **Test:** submit an empty form (5 field errors and the top alert). Type a title: its error disappears straight away. Choose a stack: its error disappears. Fix every field: the top alert disappears too. Submit: the skill publishes.
+- Both variants still send `publish_started` and `skill_published` with the right `variant`.
 
-1. Deploy, and confirm the deployment is live.
-2. Release Cohort B with **the same size and spread as Cohort A**, so the two are comparable:
+When every check passes, append the memory block below and commit as `step 19: the fix`. Cohort B comes after this commit, because it needs the fix deployed.
+
+## Run the experiment (after the commit)
+
+1. **Tag and deploy** (the user, rule 11): `git tag step-19 && git push origin main --tags`, then wait until Vercel shows the new deployment as Ready.
+2. **Restart the experiment's clock.** In PostHog, reset the `publish-flow-v2` experiment (or move its start date to now), so exposures from testing don't count. Only Cohort B should be in the result.
+3. **Release Cohort B with the same size and spread as Cohort A,** so the two are comparable. Cohort A's settings are in its `summary.json`, under `settings`:
    ```bash
    node swarm/cleanup.mjs --yes
-   node swarm/run.mjs --cohort=B --agents=<Cohort A's size> --spread-minutes=<Cohort A's spread> --url=<deployed URL>
+   node swarm/run.mjs --cohort=B --agents=<Cohort A's agents> --spread-minutes=<Cohort A's spreadMinutes> --url=<deployed URL>
    ```
-3. Read the result in PostHog (the experiment on `publish-flow-v2`, or through the PostHog MCP server): `skill_published` divided by `publish_started` for control and for test, and whether the difference is significant.
-4. Add the decision to `DECISIONS.md` as a new row: the date, what you'll do (ship the change to everyone, keep testing, or drop it), and the numbers behind it. An inconclusive result is a valid result: write it down as such.
+4. **Read the result** in PostHog (the experiment, or through the PostHog MCP server): `skill_published` divided by `publish_started` for control and for test, and whether the difference is significant.
+5. **Record the decision** as a new row in `DECISIONS.md`: the date, what you'll do (ship the change to everyone, keep testing, or drop it) and the numbers behind it. An inconclusive result is a valid result: write it down as such. Commit as `decision: publish-flow-v2 result`.
 
-DECISIONS.md should already have the row recording why this fix was chosen (added after Cohort A, before Step 18). If it's missing, add it first:
+`DECISIONS.md` should already have the row recording why this fix was chosen (added after Cohort A, before Step 18). If it's missing, add it first:
 
 ```text
 | <date> | Fix: clear each field's error when its value changes (test variant of publish-flow-v2) | Cohort A: few builders published; replays show builders re-fixing fields that were already correct because the old error stayed on screen |
 ```
 
-## Checks
-
-- `git diff step-18 --stat` shows only `components/publish/use-live-errors.ts`, `components/publish/publish-form.tsx` and `MEMORY.md`. `lib/analytics/events.ts`, `lib/validation.ts` and `app/publish/actions.ts` are unchanged.
-- **Control** (a test user in the `control` variant): submit an empty form, then type a title. The title error **stays** until you submit again, exactly as before.
-- **Test** (a test user in the `test` variant):
-  - Submit an empty form: 5 field errors and the top alert, as before.
-  - Type a title: the title error disappears straight away.
-  - Choose a stack: the stack error disappears straight away.
-  - Fix every field: the top alert disappears too.
-  - Submit: the skill publishes.
-- Both variants still send `publish_started` and `skill_published` with the right `variant`.
-- After Cohort B: the experiment shows exposures in both variants, and `DECISIONS.md` has the new row with the result.
-
 ## Update project memory
 
-Append this block to the end of `MEMORY.md`, **VERBATIM**:
+Append this block to the end of `MEMORY.md`, **VERBATIM**, before the `step 19: the fix` commit:
 
 ```md
 ## After step 19
-- publish-flow-v2 test variant: a field's error clears as soon as its value changes (components/publish/use-live-errors.ts). The control keeps errors until the next submit. No new events.
-- Cohort B ran against the experiment with the same size and spread as Cohort A. The result and the decision are in DECISIONS.md.
+- publish-flow-v2 test variant: a field's error clears as soon as its value changes (components/publish/use-live-errors.ts, no effect). The control keeps errors until the next submit. No new events.
+- The experiment's result is recorded in DECISIONS.md once Cohort B has run (same size and spread as Cohort A).
 ```
 
 ## Finish this step
 
-The agent runs the checks and, if all of them pass, commits with the message `step 19: the fix` (AGENTS.md rule 13). Then:
-
-1. Review what changed: `git show --stat HEAD`. Only this step's files, plus `MEMORY.md` and `DECISIONS.md`, should appear.
-2. Tag the checkpoint: `git tag step-19`.
+1. The agent commits the fix as `step 19: the fix` when the checks pass. Review it with `git show --stat HEAD`.
+2. Tag and deploy: `git tag step-19 && git push origin main --tags`.
+3. After Cohort B, the agent commits the result row as `decision: publish-flow-v2 result`.
