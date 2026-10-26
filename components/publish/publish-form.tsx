@@ -13,7 +13,8 @@ import { Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Markdown } from "@/components/skill/markdown";
 import { PaywallDialog } from "@/components/billing/paywall-dialog";
-import { publishSkill, type PublishField, type PublishState } from "@/app/publish/actions";
+import { publishSkill, type PublishState } from "@/app/publish/actions";
+import { useLiveErrors } from "@/components/publish/use-live-errors";
 import type { Variant } from "@/lib/analytics/events";
 import { STACKS } from "@/lib/constants";
 import { slugify } from "@/lib/slug";
@@ -44,6 +45,7 @@ export function PublishForm({
   teamName: string | null;
 }) {
   const [state, formAction, pending] = useActionState<PublishState, FormData>(publishSkill.bind(null, variant), {});
+  const { errors, clear, showFormError } = useLiveErrors(state, variant === "test");
   const [, startTransition] = useTransition();
   // Controlled fields keep their values after a failed submit.
   const [title, setTitle] = useState("");
@@ -58,7 +60,6 @@ export function PublishForm({
   // The paywall opens for every submit that returns one, until that result is dismissed.
   const [dismissed, setDismissed] = useState<PublishState | null>(null);
   const paywallOpen = Boolean(state.paywall) && dismissed !== state;
-  const errors: Partial<Record<PublishField, string>> = state.errors ?? {};
   const asTeam = Boolean(teamName) && owner === "team";
   const router = useRouter();
   const pathname = usePathname();
@@ -122,7 +123,7 @@ export function PublishForm({
     >
       <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">Publish a skill</h1>
 
-      {state.formError ? (
+      {showFormError ? (
         <Alert variant="destructive">
           <AlertDescription>{state.formError}</AlertDescription>
         </Alert>
@@ -134,10 +135,13 @@ export function PublishForm({
           id="publish-title"
           name="title"
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          aria-invalid={errors.title ? true : undefined}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            clear("title");
+          }}
+          aria-invalid={errors?.title ? true : undefined}
         />
-        <FieldError message={errors.title} />
+        <FieldError message={errors?.title} />
         <p className="text-sm text-muted-foreground">Your skill will live at /s/{slugify(title) || "your-skill"}</p>
       </div>
 
@@ -164,18 +168,27 @@ export function PublishForm({
           id="publish-description"
           name="description"
           value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          aria-invalid={errors.description ? true : undefined}
+          onChange={(event) => {
+            setDescription(event.target.value);
+            clear("description");
+          }}
+          aria-invalid={errors?.description ? true : undefined}
         />
-        <FieldError message={errors.description} />
+        <FieldError message={errors?.description} />
         <p className="text-sm text-muted-foreground">One sentence on what the skill does.</p>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="publish-stack">Stack</Label>
         <input type="hidden" name="stack" value={stack} />
-        <Select value={stack} onValueChange={setStack}>
-          <SelectTrigger id="publish-stack" className="w-full sm:w-64" aria-invalid={errors.stack ? true : undefined}>
+        <Select
+          value={stack}
+          onValueChange={(value) => {
+            setStack(value);
+            clear("stack");
+          }}
+        >
+          <SelectTrigger id="publish-stack" className="w-full sm:w-64" aria-invalid={errors?.stack ? true : undefined}>
             <SelectValue placeholder="Choose a stack" />
           </SelectTrigger>
           <SelectContent>
@@ -186,7 +199,7 @@ export function PublishForm({
             ))}
           </SelectContent>
         </Select>
-        <FieldError message={errors.stack} />
+        <FieldError message={errors?.stack} />
       </div>
 
       <div className="space-y-2">
@@ -195,10 +208,13 @@ export function PublishForm({
           id="publish-tags"
           name="tags"
           value={tags}
-          onChange={(event) => setTags(event.target.value)}
-          aria-invalid={errors.tags ? true : undefined}
+          onChange={(event) => {
+            setTags(event.target.value);
+            clear("tags");
+          }}
+          aria-invalid={errors?.tags ? true : undefined}
         />
-        <FieldError message={errors.tags} />
+        <FieldError message={errors?.tags} />
         <p className="text-sm text-muted-foreground">Comma-separated, up to 5. Example: auth, nextjs</p>
       </div>
 
@@ -241,10 +257,13 @@ export function PublishForm({
             <Textarea
               id="publish-content"
               value={content}
-              onChange={(event) => setContent(event.target.value)}
+              onChange={(event) => {
+                setContent(event.target.value);
+                clear("content");
+              }}
               placeholder={"# Skill name\nWhen should an agent use this skill?"}
               className="min-h-[320px] font-mono"
-              aria-invalid={errors.content ? true : undefined}
+              aria-invalid={errors?.content ? true : undefined}
             />
           </TabsContent>
           <TabsContent value="preview">
@@ -253,7 +272,7 @@ export function PublishForm({
             </div>
           </TabsContent>
         </Tabs>
-        <FieldError message={errors.content} />
+        <FieldError message={errors?.content} />
       </div>
 
       <Button type="submit" disabled={pending}>

@@ -92,3 +92,7 @@ Never edit earlier blocks.
 
 ## After step 18
 - Feature flag publish-flow-v2 (control/test, 50/50) and its experiment, created via the PostHog MCP. /publish picks the variant on the server with getFlag().
+
+## After step 19
+- publish-flow-v2 test variant: a field's error clears as soon as its value changes (components/publish/use-live-errors.ts, no effect). The control keeps errors until the next submit. No new events.
+- The experiment's result is recorded in DECISIONS.md once Cohort B has run (same size and spread as Cohort A).
