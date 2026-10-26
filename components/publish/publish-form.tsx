@@ -48,10 +48,12 @@ export function PublishForm({
   // Controlled fields keep their values after a failed submit.
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [stack, setStack] = useState("");
-  const [owner, setOwner] = useState("personal");
+  // Stack, Publish as and Visibility are posted through hidden inputs, not the Radix
+  // components' own form fields, so the submitted value always matches what's shown.
+  const [stack, setStack] = useState(state.values?.stack ?? "");
+  const [owner, setOwner] = useState(state.values?.owner || "personal");
   const [tags, setTags] = useState("");
-  const [visibility, setVisibility] = useState("public");
+  const [visibility, setVisibility] = useState(state.values?.visibility || "public");
   const [content, setContent] = useState("");
   // The paywall opens for every submit that returns one, until that result is dismissed.
   const [dismissed, setDismissed] = useState<PublishState | null>(null);
@@ -142,7 +144,8 @@ export function PublishForm({
       {teamName ? (
         <div className="space-y-2">
           <Label htmlFor="publish-owner">Publish as</Label>
-          <Select name="owner" value={owner} onValueChange={setOwner}>
+          <input type="hidden" name="owner" value={owner} />
+          <Select value={owner} onValueChange={setOwner}>
             <SelectTrigger id="publish-owner" className="w-full sm:w-64">
               <SelectValue />
             </SelectTrigger>
@@ -170,7 +173,8 @@ export function PublishForm({
 
       <div className="space-y-2">
         <Label htmlFor="publish-stack">Stack</Label>
-        <Select name="stack" value={stack} onValueChange={setStack}>
+        <input type="hidden" name="stack" value={stack} />
+        <Select value={stack} onValueChange={setStack}>
           <SelectTrigger id="publish-stack" className="w-full sm:w-64" aria-invalid={errors.stack ? true : undefined}>
             <SelectValue placeholder="Choose a stack" />
           </SelectTrigger>
@@ -200,7 +204,8 @@ export function PublishForm({
 
       <div className="space-y-2">
         <Label id="publish-visibility">Visibility</Label>
-        <RadioGroup name="visibility" value={visibility} onValueChange={setVisibility} aria-labelledby="publish-visibility">
+        <input type="hidden" name="visibility" value={visibility} />
+        <RadioGroup value={visibility} onValueChange={setVisibility} aria-labelledby="publish-visibility">
           <div className="flex items-start gap-3">
             <RadioGroupItem id="publish-visibility-public" value="public" className="mt-0.5" />
             <div className="space-y-1">
