@@ -4,6 +4,7 @@
 //   node swarm/run.mjs --url=... --cohort=A --agents=300 --spread-minutes=90
 //   node swarm/run.mjs --url=... --return-wave=A --cohort-size=300
 //   node swarm/run.mjs --url=... --cohort=T --agents=40 --only=builder
+//   node swarm/run.mjs --url=... --cohort=B --agents=320 --only=builder --exclude=builder-private,builder-team
 //
 // Prints one line per agent. Details go to swarm/results/<run>-<start time>/.
 import fs from 'node:fs';
@@ -36,6 +37,7 @@ const SEED = Number(arg.seed || 42);
 const MODEL = arg.model || process.env.SWARM_MODEL || '';
 const HEADED = arg.headed === 'true';
 const ONLY = arg.only ? String(arg.only).split(',').map((x) => x.trim()) : null;
+const EXCLUDE = arg.exclude ? String(arg.exclude).split(',').map((x) => x.trim()) : null;
 const STATE_DIR = path.join(HERE, 'state');
 // Every run gets its own results folder, so runs never overwrite each other.
 const RUN_NAME = RETURN_OF ? `return-wave-${RETURN_OF}` : `cohort-${COHORT}`;
@@ -62,6 +64,11 @@ if (RETURN_OF) {
 if (ONLY) {
   personas = personas.filter((p) => ONLY.includes(p.type) || ONLY.includes(p.variant));
   if (!personas.length) fail(`No personas match --only=${ONLY.join(',')}.`);
+}
+// --exclude=builder-private,builder-team leaves out personas by variant (or type).
+if (EXCLUDE) {
+  personas = personas.filter((p) => !EXCLUDE.includes(p.variant) && !EXCLUDE.includes(p.type));
+  if (!personas.length) fail(`--exclude=${EXCLUDE.join(',')} left no personas.`);
 }
 
 // Spread arrivals: each agent gets a start time within the window, never all at once.
@@ -324,6 +331,7 @@ const summary = {
     seed: SEED,
     maxUsd: MAX_USD,
     only: ONLY,
+    exclude: EXCLUDE,
   },
   agents: results.length,
   wallClockMinutes: round((Date.now() - runStart) / 60000, 1),

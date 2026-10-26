@@ -55,6 +55,7 @@ node swarm/run.mjs --url=https://your-app.vercel.app --cohort=B --agents=300 --s
 | `--return-wave` | off | Re-run about half of a cohort from saved sessions, starting at `/dashboard` |
 | `--cohort-size` | 300 | With `--return-wave`: how many agents the original cohort had |
 | `--only` | all | Run only some personas, by type or variant, for example `--only=builder` or `--only=builder-private,builder-team` |
+| `--exclude` | none | Leave out personas by variant or type, for example `--exclude=builder-private,builder-team` for plain builders only |
 | `--seed` | 42 | Same seed, same personas |
 | `--headed` | off | Show the browsers (for debugging) |
 

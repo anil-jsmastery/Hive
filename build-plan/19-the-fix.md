@@ -98,19 +98,21 @@ When every check passes, append the memory block below and commit as `step 19: t
 
 1. **Push, tag and confirm the deploy** (the user, rule 11): `git push origin main`, `git tag step-19`, `git push origin step-19`. Wait until Vercel shows the new deployment as Ready **and** its commit is `step 19: the fix`. Then, on the live site, open `/publish` as a test user in the `test` variant, submit an empty form and type a title: the title error must disappear. If it doesn't, the live site is still serving the old form, and a cohort would measure nothing.
 2. **Restart the experiment's clock.** In PostHog, reset the `publish-flow-v2` experiment (or move its start date to now), so exposures from testing don't count. Only Cohort B should be in the result.
-3. **Release Cohort B: builders only, and enough of them.** The experiment compares control and test *inside* Cohort B; Cohort A was the baseline that showed what to fix, not part of the experiment. Only builders open the publish form, so other personas add cost and nothing else. Decide the sample size before you run:
+3. **Release Cohort B: the builders the fix can affect, and enough of them.** The experiment compares control and test *inside* Cohort B; Cohort A was the baseline that showed what to fix, not part of the experiment. Decide two things **before** you run, and write them down:
+   - **Who's in the sample.** Only builders open the publish form, and private and team builders are stopped by the paywall and team creation, which the fix doesn't touch. They publish nothing in either variant and only dilute the result. So the sample is **plain builders**.
+   - **How many.** Enough for the difference you're looking for:
 
-   | Run | Command | Builders | Per variant |
+   | Run | Command | Plain builders | Per variant |
    | --- | --- | --- | --- |
-   | Rehearsal | `--agents=160 --only=builder` | 40 | about 20 |
-   | Recorded video | `--agents=320 --only=builder` | 80 | about 40 |
+   | Rehearsal | `--agents=160 --only=builder --exclude=builder-private,builder-team` | 24 | about 12 |
+   | Recorded video | `--agents=320 --only=builder --exclude=builder-private,builder-team` | 48 | about 24 |
 
    ```bash
    node swarm/cleanup.mjs --yes
-   node swarm/run.mjs --cohort=B --agents=320 --only=builder --spread-minutes=30 --url=<deployed URL>
+   node swarm/run.mjs --cohort=B --agents=320 --only=builder --exclude=builder-private,builder-team --spread-minutes=20 --url=<deployed URL>
    ```
 
-   Even 40 per variant only detects a large difference reliably (for example 20% against 50%), so "inconclusive, keep testing" is a possible and honest outcome.
+   Don't promote a subgroup you found *after* looking at the results: with enough slices, something always looks significant by chance. If a subgroup looks promising, make it the pre-declared sample of the next run, as above. `--spread-minutes` only changes when agents arrive, not the result; 20 minutes is plenty for 48 builders.
 
    **Check the instrument before trusting the result.** In the run's `agents.jsonl`, builders who got stuck should be stuck on the product, not on the harness. If stuck builders have many failed actions around one control (a dropdown, say) and builders who published have none, the harness is distorting the experiment: fix the harness, restart the experiment's clock and run Cohort B again.
 4. **Read the result** in PostHog (the experiment, or through the PostHog MCP server): `skill_published` divided by `publish_started` for control and for test, and whether the difference is significant.
@@ -129,7 +131,7 @@ Append this block to the end of `MEMORY.md`, **VERBATIM**, before the `step 19: 
 ```md
 ## After step 19
 - publish-flow-v2 test variant: a field's error clears as soon as its value changes (components/publish/use-live-errors.ts, no effect). The control keeps errors until the next submit. No new events.
-- The experiment's result is recorded in DECISIONS.md once Cohort B (builders only, sized for the experiment) has run against the deployed fix.
+- The experiment's result is recorded in DECISIONS.md once Cohort B (plain builders only, sample decided before the run) has run against the deployed fix.
 ```
 
 ## Finish this step
