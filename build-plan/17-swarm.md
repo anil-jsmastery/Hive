@@ -11,25 +11,40 @@
 
 **Goal:** the swarm harness that sends AI agents through the deployed Hive, each in its own real browser, signing up through Clerk like a person would.
 
-**The harness is copied, not generated.** Copy the tested `swarm/` folder provided with this plan into the project, rather than asking an agent to write it. Agent behaviour has to be identical every time the swarm runs.
+**The harness is copied, not generated.** The tested harness ships with this plan in `build-plan/swarm/`. Copy it to `swarm/` in the project root, unchanged, rather than asking an agent to write it: agent behaviour has to be identical every time the swarm runs.
 
 ## Install
 
 ```bash
+cp -r build-plan/swarm swarm
 npm install -D playwright @clerk/testing
 npx playwright install chromium
+cp swarm/.env.example swarm/.env
 ```
 
-## Files (provided with this plan; don't regenerate them)
+Add these three lines to `.gitignore`:
+
+```text
+swarm/.env
+swarm/state/
+swarm/results/
+```
+
+The user fills in `swarm/.env` (rule 11): `SWARM_MODEL` and the API key for that provider. The harness also reads `.env.local` for the Clerk keys (testing tokens) and the Supabase URL and secret key. `swarm/evidence.mjs` is the one place outside the app that reads the secret key, and it only runs read-only queries to check what agents actually did.
+
+## Files (copied from `build-plan/swarm/`; don't regenerate them)
 
 | File | What it does |
 | --- | --- |
-| `swarm/run.mjs` | Runs agents in parallel (`--concurrency`), spreads arrivals (`--spread-minutes`), saves each agent's browser state, writes `swarm/results/summary.json` |
-| `swarm/personas.mjs` | Builds the persona list for a cohort |
-| `swarm/providers.mjs` | One function for every model provider, returning real token usage |
+| `swarm/run.mjs` | The runner: personas, parallel browsers (`--concurrency`), spread arrivals (`--spread-minutes`), saved sessions, the budget cap and `swarm/results/summary.json` |
+| `swarm/personas.mjs` | The persona list for a cohort. Same cohort and seed, same personas |
+| `swarm/observe.mjs` | Turns the page, including payment iframes, into text with element ids, and performs the agent's actions |
+| `swarm/providers.mjs` | One function for every model provider: structured output, retries on rate limits and errors, real token usage |
+| `swarm/evidence.mjs` | Read-only success checks in Supabase |
+| `swarm/cleanup.mjs` | Deletes swarm test accounts, the teams they created and their data. Dry run unless `--yes` |
 | `swarm/prices.json` | Prices per million tokens. Never guessed |
-| `swarm/state/` | Saved browser state per agent, for the return wave |
-| `swarm/.env` | The swarm's model API keys (`SWARM_*`). Add both `swarm/.env` and `swarm/state/` to `.gitignore` |
+| `swarm/.env.example` | The settings to copy into `swarm/.env` |
+| `swarm/README.md` | Every command and flag |
 
 ## Rules the harness follows
 
@@ -38,39 +53,44 @@ npx playwright install chromium
 | Target | `--url=` the deployed Hive URL |
 | Start URL | `/?swarm={cohort}&persona={type}&model={model}&utm_source={source}&utm_medium=swarm&utm_campaign=launch-rehearsal`. 10% of consumers start at `/s/{random seed slug}?ref=share` with the same parameters |
 | Clerk | Calls `clerkSetup()` once and `setupClerkTestingToken({ page })` on every page, so Clerk's bot protection lets agents through. Requires the development instance |
-| Accounts | Each agent's prompt includes: "If you need an account, sign up with email agent-{cohort}-{id}+clerk_test@example.com, username {name}-{cohort}{id}, password {random 16 characters}. The verification code is 424242." |
-| Payments | Agents who decide to pay are told: "Use card 4242 4242 4242 4242, any future expiry date and any CVC." (development gateway only) |
+| Accounts | Each agent's prompt includes: "If you need an account, sign up with email agent-{cohort}-{id}+clerk_test@example.com, username {name}-{cohort}{id}, password {16 random characters}. The verification code is 424242." |
+| Payments | Agents who may pay (private and team builders) are told: "card 4242 4242 4242 4242, expiry 12/34, CVC 123, ZIP 10001" (development gateway only). The payment fields live in iframes, which the harness reads too |
 | Personas | consumer 40%, builder 25%, curator 15%, mobile 15% (390×844 viewport, phone user agent), lurker 5%. Of the builders, one in five wants a **private** skill for themselves and one in five wants a private skill **for their company's team** |
 | Goals | Agents get a goal and a patience limit, never a click path |
-| Arrivals | Agents start at random times across `--spread-minutes` (default 90), never all at once |
+| Arrivals | Agents start at random times across `--spread-minutes`: 0 for test batches, 90 for cohorts. Never all at once in a cohort |
 | Return wave | `--return-wave=A` reloads saved state for about half of Cohort A, starts on `/dashboard` with the goal "See what happened to your skills and react to anything interesting." |
 | Ground truth | Success comes from evidence, never from what the agent claims: the "Install command copied" toast seen in the page, or rows in Supabase (skills, comments, stars) authored by the agent's profile |
-| Browser identity | A normal desktop or phone user agent, never headless Chrome's default, so PostHog doesn't drop the sessions as bots |
+| Browser identity | posthog-js drops headless Chrome as a bot (it checks `navigator.webdriver` and the browser brands, not just the user agent). The harness launches Chrome without the automation flag and reports a normal browser brand and user agent, so sessions are recorded. Agents stay identifiable through `cohort: swarm-<name>` on every event |
+| Clipboard | Every agent's browser gets clipboard permission, because "Install" copies a command before showing its toast |
+| Step limits | Signing up takes about 12 steps, so limits leave room for the goal: consumers and curators 30, mobile 20, lurkers 8, builders 36, private builders 50, team builders 60, return visits 14 |
 
-## Models (paid APIs only)
+## Models (any LLM API)
 
-Local models are too slow for a swarm, so the harness uses a paid API. Use whichever provider you have a key for, and record your choice in `DECISIONS.md`.
+Local models are too slow for a swarm, so the harness uses a paid API, and **any provider works**: use whichever key you have. On the provider's pricing page, pick the cheapest model that supports **structured outputs** or **JSON mode**, set it in `swarm/.env` as `SWARM_MODEL`, add its price to `swarm/prices.json`, and record the choice in `DECISIONS.md`. The course itself runs on **`openai:gpt-6-luna`** (GPT-6 Luna, OpenAI's cheapest current model with structured outputs, already priced in `swarm/prices.json`) at reasoning effort `low`. If agents struggle with simple goals in the 10-agent batch, move up to GPT-6 Sol.
 
-| Provider | Model spec | Key in `swarm/.env` | Watch out for |
+| Provider | `SWARM_MODEL` | Key in `swarm/.env` | Watch out for |
 | --- | --- | --- | --- |
-| OpenAI | `openai:<model>` | `SWARM_OPENAI_API_KEY` | New accounts start with low rate limits. Check your usage tier |
-| Anthropic (Claude) | `anthropic:<model>`, for example `anthropic:claude-haiku-5-5` | `SWARM_ANTHROPIC_API_KEY` | Tier 1 allows 50 requests a minute per model. Use Tier 2 or higher for a 300-agent cohort |
-| Google Gemini | `gemini:<model>` | `SWARM_GEMINI_API_KEY` | Use the paid tier for cohorts. Free-tier daily limits are too low |
-| DeepSeek | `deepseek:deepseek-v4-flash` | `SWARM_DEEPSEEK_API_KEY` | Thinking mode is on by default; turn it off. Check the price on the day you run |
-| Moonshot (Kimi) | `moonshot:<model>`, for example `moonshot:kimi-k2.6` | `SWARM_MOONSHOT_API_KEY` | New accounts allow 1 request at a time and 3 a minute. Fine for a 5-agent test, too slow for a cohort |
+| OpenAI | `openai:<model id>` | `SWARM_OPENAI_API_KEY` | New accounts start with low rate limits. Check your usage tier |
+| Anthropic (Claude) | `anthropic:<model id>`, for example `anthropic:claude-haiku-5-5` | `SWARM_ANTHROPIC_API_KEY` | Tier 1 allows 50 requests a minute per model. Use Tier 2 or higher for a 300-agent cohort |
+| Google Gemini | `gemini:<model id>` | `SWARM_GEMINI_API_KEY` | Use the paid tier for cohorts. Free-tier daily limits are too low |
+| DeepSeek | `deepseek:<model id>` | `SWARM_DEEPSEEK_API_KEY` | Turn thinking mode off. Check the price on the day you run |
+| Moonshot (Kimi) | `moonshot:<model id>` | `SWARM_MOONSHOT_API_KEY` | New accounts allow 1 request at a time. Too slow for a cohort |
+| OpenRouter | `openrouter:<vendor/model>` | `SWARM_OPENROUTER_API_KEY` | One key for hundreds of models. Prices are per model on OpenRouter's site |
+| Any OpenAI-compatible API (Groq, Together, Mistral, xAI, Fireworks…) | `compat:<model id>` | `SWARM_API_KEY`, plus `SWARM_BASE_URL` | The base URL is in the provider's docs: the part before `/chat/completions` |
 
-**Rules for every provider:**
+**Why it won't crash:**
 
-- Turn thinking or reasoning off, or set it to the lowest level. It makes each step slower and more expensive and can break the JSON reply.
-- Prices in `swarm/prices.json` come from the provider's own pricing page, by exact model id. Never guess. A model without a price still reports tokens, shown as "no price".
-- Keys live only in `swarm/.env` (git-ignored), always with the `SWARM_` prefix. Never export them in the terminal where your coding agent runs: if `ANTHROPIC_API_KEY` is set there, Claude Code bills that API key instead of your Claude plan.
-- Match `--concurrency` to your rate limit:
+- **Every reply parses.** Each provider is asked for structured output (a fixed JSON schema). If a model doesn't support it, the harness falls back to JSON mode, then to reading the JSON from plain text, once per run.
+- **Rejected settings fall back.** If a model rejects `reasoning_effort` or a structured format, the harness drops that setting once and carries on.
+- **Busy APIs are retried.** Rate limits (429), server errors, timeouts and network failures are retried with backoff, respecting `retry-after`.
+- **Failures are contained.** One agent crashing never stops the others. The summary counts crashes, unclear replies, failed actions and API retries.
+- **Spending is capped.** `--max-usd` (default 10) stops new agents once the cap is reached.
 
-| Account | `--concurrency` |
-| --- | --- |
-| Claude Tier 1, or a new OpenAI account | 10–15 |
-| Claude Tier 2+, established OpenAI or Gemini paid tier, DeepSeek | 20–40 |
-| Moonshot (new account) | 1 |
+**Check the model before a cohort:** run the 10-agent batch first. `crashed` should be 0 and unclear replies close to 0. If many agents give up early on simple goals, such as installing a skill, move up one model tier and run the batch again.
+
+Keys live only in `swarm/.env`, with the `SWARM_` prefix. Never export them in the terminal where your coding agent runs: if `ANTHROPIC_API_KEY` is set there, Claude Code bills that key instead of your Claude plan.
+
+Match `--concurrency` to your rate limit: 10 for a new account, 20–40 once your tier allows it.
 
 Results differ between models. That's expected: the code must match, the data doesn't have to.
 
@@ -82,9 +102,16 @@ Results differ between models. That's expected: the code must match, the data do
 
 ## Checks
 
-- A 10-agent test batch: 10 Clerk users exist with `+clerk_test` emails, PostHog shows events with `cohort: swarm-A`, nothing is filtered as a bot, and each agent has a session recording.
-- `swarm/results/summary.json` shows cost per agent and success rate per model.
-- Clean up test users between dry runs (Clerk Dashboard, or the Clerk CLI via the Clerk skill).
+- `swarm/` matches `build-plan/swarm/` exactly (`diff -r build-plan/swarm swarm` shows only the new `.env`, `state/` and `results/`).
+- `git check-ignore swarm/.env swarm/state swarm/results` lists all three.
+- A free dry run works: `node swarm/run.mjs --url=<deployed URL> --agents=3 --model=mock:random` finishes with 0 crashed.
+- The 10-agent batch with the real model (`node swarm/run.mjs --url=<deployed URL> --cohort=A --agents=10`):
+  - 0 crashed, and unclear replies close to 0.
+  - Clerk shows new users with `+clerk_test` emails.
+  - PostHog shows browser events (`$pageview`, `skill_viewed`, `search_performed`) with `cohort: swarm-A`, not only server events, and a session recording per agent. Server events alone mean agents were filtered as bots.
+  - At least some consumers and builders succeed. 0% across every persona means a harness problem, not product friction.
+  - `swarm/results/summary.json` shows the cost per agent and the success rate per persona.
+- `node swarm/cleanup.mjs` lists the swarm's test users and teams, and `node swarm/cleanup.mjs --yes` deletes them. Run it before every new batch or cohort.
 
 ## Update project memory
 
@@ -92,8 +119,9 @@ Append this block to the end of `MEMORY.md`, **VERBATIM**:
 
 ```md
 ## After step 17
-- swarm/ harness (copied from tag step-17): Playwright agents with personas, Clerk testing tokens and +clerk_test accounts, test card for payments, spread arrivals, saved state for the return wave, evidence-based success.
-- Models: paid APIs only (OpenAI, Anthropic, Gemini, DeepSeek, Moonshot), keys as SWARM_* in swarm/.env (git-ignored, never in the coding agent's shell), thinking off. The main-run model is recorded in DECISIONS.md.
+- swarm/ harness copied unchanged from build-plan/swarm/: Playwright agents with personas, Clerk testing tokens and +clerk_test accounts, test card for payments (iframes included), spread arrivals, saved sessions for the return wave, evidence-based success, structured output and retries. Browsers present as normal Chrome (so posthog-js doesn't drop them as bots) and have clipboard permission.
+- node swarm/cleanup.mjs --yes removes swarm test users, their teams and their data before each run.
+- Model: SWARM_MODEL in swarm/.env, any provider (openai, anthropic, gemini, deepseek, moonshot, openrouter, or compat for any OpenAI-compatible API); keys as SWARM_* in swarm/.env (git-ignored, never in the coding agent's shell). The chosen model is recorded in DECISIONS.md.
 ```
 
 ## Finish this step

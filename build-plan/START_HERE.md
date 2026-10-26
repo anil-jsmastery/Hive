@@ -7,7 +7,7 @@ Claude Code builds all of Hive, step by step. You handle only what an agent can'
 - [ ] Node 24 (`node -v`), Git, and Claude Code signed in with your Claude plan.
 - [ ] `claude update` (Opus 5.5 needs v2.1.280 or later).
 - [ ] `echo $ANTHROPIC_API_KEY` prints nothing in your terminal. If it prints a key, Claude Code bills that key instead of your plan.
-- [ ] Accounts: Clerk, Supabase, PostHog (a new project just for Hive), GitHub, and later Vercel and a model API for the swarm.
+- [ ] Accounts: Clerk, Supabase, PostHog (a new project just for Hive), GitHub, and later Vercel and an API key for any LLM provider for the swarm (OpenAI, Anthropic, Google, DeepSeek, Moonshot, OpenRouter, or any OpenAI-compatible API).
 
 ## 2. Set up the folder
 
@@ -16,7 +16,8 @@ Unzip this download. You get a `hive` folder containing only:
 ```text
 hive/
 ├─ .claude/settings.json   pins Claude Code to Opus 5.5 at medium effort
-└─ build-plan/             START_HERE.md, README.md, CONTRACT.md, DESIGN.md and steps 00–19
+└─ build-plan/             START_HERE.md, README.md, CONTRACT.md, DESIGN.md, steps 00–19
+                           seed-skills/ (the 30 skills Step 04 loads) and swarm/ (the harness Step 17 copies)
 ```
 
 Put it where you want the project (for example `~/Downloads/hive`). If an older `hive` folder is there, rename it first (`mv hive hive-old`). `.claude` is hidden in Finder; that's normal.
