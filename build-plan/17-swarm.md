@@ -36,7 +36,7 @@ The user fills in `swarm/.env` (rule 11): `SWARM_MODEL` and the API key for that
 
 | File | What it does |
 | --- | --- |
-| `swarm/run.mjs` | The runner: personas, parallel browsers (`--concurrency`), spread arrivals (`--spread-minutes`), saved sessions, the budget cap and `swarm/results/summary.json` |
+| `swarm/run.mjs` | The runner: personas, parallel browsers (`--concurrency`), spread arrivals (`--spread-minutes`), saved sessions, the budget cap, and one results folder per run (`swarm/results/<run>-<start time>/summary.json`), so runs never overwrite each other |
 | `swarm/personas.mjs` | The persona list for a cohort. Same cohort and seed, same personas |
 | `swarm/observe.mjs` | Turns the page, including payment iframes, into text with element ids, and performs the agent's actions |
 | `swarm/providers.mjs` | One function for every model provider: structured output, retries on rate limits and errors, real token usage |
@@ -105,12 +105,12 @@ Results differ between models. That's expected: the code must match, the data do
 - `swarm/` matches `build-plan/swarm/` exactly (`diff -r build-plan/swarm swarm` shows only the new `.env`, `state/` and `results/`).
 - `git check-ignore swarm/.env swarm/state swarm/results` lists all three.
 - A free dry run works: `node swarm/run.mjs --url=<deployed URL> --agents=3 --model=mock:random` finishes with 0 crashed.
-- The 10-agent batch with the real model (`node swarm/run.mjs --url=<deployed URL> --cohort=A --agents=10`):
+- The 10-agent batch with the real model (`node swarm/run.mjs --url=<deployed URL> --cohort=T --agents=10`). Test batches always use cohort `T`, so they never mix with Cohort A's data:
   - 0 crashed, and unclear replies close to 0.
   - Clerk shows new users with `+clerk_test` emails.
-  - PostHog shows browser events (`$pageview`, `skill_viewed`, `search_performed`) with `cohort: swarm-A`, not only server events, and a session recording per agent. Server events alone mean agents were filtered as bots.
+  - PostHog shows browser events (`$pageview`, `skill_viewed`, `search_performed`) with `cohort: swarm-T`, not only server events, and a session recording per agent. Server events alone mean agents were filtered as bots.
   - At least some consumers and builders succeed. 0% across every persona means a harness problem, not product friction.
-  - `swarm/results/summary.json` shows the cost per agent and the success rate per persona.
+  - The run's `summary.json` (in `swarm/results/cohort-T-<start time>/`) shows the cost per agent and the success rate per persona.
 - `node swarm/cleanup.mjs` lists the swarm's test users and teams, and `node swarm/cleanup.mjs --yes` deletes them. Run it before every new batch or cohort.
 
 ## Update project memory
