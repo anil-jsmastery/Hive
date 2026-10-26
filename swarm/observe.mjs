@@ -128,18 +128,33 @@ export async function act(page, frames, a) {
       const frame = frames[fi];
       if (!frame) throw new Error(`no frame for ${a.target}`);
       const el = frame.locator(`[data-sw="${a.target}"]`).first();
+      const text = String(a.text ?? '');
       if (a.action === 'click') {
         await el.click({ timeout });
       } else if (a.action === 'type') {
+        // "type" always replaces the field's content, never adds to it.
         try {
-          await el.fill(String(a.text ?? ''), { timeout });
+          await el.fill(text, { timeout });
         } catch {
           await el.click({ timeout });
-          await page.keyboard.type(String(a.text ?? ''), { delay: 25 });
+          await page.keyboard.press('ControlOrMeta+A');
+          await page.keyboard.press('Backspace');
+          await page.keyboard.type(text, { delay: 15 });
         }
       } else {
-        await el.selectOption({ label: String(a.text ?? '') }, { timeout })
-          .catch(() => el.selectOption(String(a.text ?? ''), { timeout }));
+        const tag = await el.evaluate((n) => n.tagName.toLowerCase()).catch(() => '');
+        if (tag === 'select') {
+          await el.selectOption({ label: text }, { timeout })
+            .catch(() => el.selectOption(text, { timeout }));
+        } else {
+          // Custom dropdowns (such as shadcn/Radix Select): open it, then click the option by name.
+          await el.click({ timeout });
+          // Only visible options: Radix also renders a hidden native <select> with the same options.
+          const option = frame.getByRole('option', { name: text, exact: true }).filter({ visible: true }).first();
+          await option.click({ timeout }).catch(async () => {
+            await frame.getByRole('option', { name: text }).filter({ visible: true }).first().click({ timeout });
+          });
+        }
       }
       break;
     }
