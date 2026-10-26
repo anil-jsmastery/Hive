@@ -89,3 +89,6 @@ Never edit earlier blocks.
 - swarm/ harness copied unchanged from build-plan/swarm/: Playwright agents with personas, Clerk testing tokens and +clerk_test accounts, test card for payments (iframes included), spread arrivals, saved sessions for the return wave, evidence-based success, structured output and retries. Browsers present as normal Chrome (so posthog-js doesn't drop them as bots) and have clipboard permission.
 - node swarm/cleanup.mjs --yes removes swarm test users, their teams and their data before each run.
 - Model: SWARM_MODEL in swarm/.env, any provider (openai, anthropic, gemini, deepseek, moonshot, openrouter, or compat for any OpenAI-compatible API); keys as SWARM_* in swarm/.env (git-ignored, never in the coding agent's shell). The chosen model is recorded in DECISIONS.md.
+
+## After step 18
+- Feature flag publish-flow-v2 (control/test, 50/50) and its experiment, created via the PostHog MCP. /publish picks the variant on the server with getFlag().
