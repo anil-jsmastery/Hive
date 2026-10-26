@@ -70,8 +70,9 @@ function collectInFrame({ fi, limit }) {
   const errors = fi === 0
     ? [...document.querySelectorAll('.text-destructive, [role=alert]')].map((e) => clean(e.innerText, 120)).filter(Boolean).join(' | ')
     : '';
+  const openList = fi === 0 ? [...document.querySelectorAll('[role=listbox]')].some(visible) : false;
 
-  return { items, text, toasts, dialog, errors };
+  return { items, text, toasts, dialog, errors, openList };
 }
 
 export async function observe(page) {
@@ -83,6 +84,7 @@ export async function observe(page) {
     toasts: '',
     dialog: '',
     errors: '',
+    openList: false,
     items: [],
     frames,
   };
@@ -104,6 +106,7 @@ export async function observe(page) {
       out.toasts = res.toasts;
       out.dialog = res.dialog;
       out.errors = res.errors;
+      out.openList = res.openList;
     }
     if (res.items.length) {
       if (fi > 0) out.items.push(`-- inside frame ${fi} (for example a payment form) --`);
@@ -111,6 +114,22 @@ export async function observe(page) {
     }
   }
   return out;
+}
+
+async function openListbox(frame) {
+  return (await frame.locator('[role="listbox"]').filter({ visible: true }).count()) > 0;
+}
+
+// While a shadcn/Radix dropdown is open, an invisible layer covers the page and the
+// next click only closes the dropdown. People close dropdowns without thinking, so
+// the harness does too, unless the click is on something inside the open list.
+async function closeDropdownUnlessInside(page, frame, el) {
+  if (!(await openListbox(frame))) return;
+  const inside = await el.evaluate((n) => Boolean(n.closest('[role="listbox"]'))).catch(() => false);
+  if (!inside) {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  }
 }
 
 export async function act(page, frames, a) {
@@ -130,6 +149,7 @@ export async function act(page, frames, a) {
       const el = frame.locator(`[data-sw="${a.target}"]`).first();
       const text = String(a.text ?? '');
       if (a.action === 'click') {
+        await closeDropdownUnlessInside(page, frame, el);
         await el.click({ timeout });
       } else if (a.action === 'type') {
         // "type" always replaces the field's content, never adds to it.
@@ -147,13 +167,16 @@ export async function act(page, frames, a) {
           await el.selectOption({ label: text }, { timeout })
             .catch(() => el.selectOption(text, { timeout }));
         } else {
-          // Custom dropdowns (such as shadcn/Radix Select): open it, then click the option by name.
-          await el.click({ timeout });
+          // Custom dropdowns (shadcn/Radix Select). Open it only if it isn't open already:
+          // clicking the trigger of an open dropdown closes it again.
+          if (!(await openListbox(frame))) await el.click({ timeout });
           // Only visible options: Radix also renders a hidden native <select> with the same options.
           const option = frame.getByRole('option', { name: text, exact: true }).filter({ visible: true }).first();
           await option.click({ timeout }).catch(async () => {
             await frame.getByRole('option', { name: text }).filter({ visible: true }).first().click({ timeout });
           });
+          // Never leave a dropdown open: its overlay would swallow the next click.
+          if (await openListbox(frame)) await page.keyboard.press('Escape');
         }
       }
       break;
