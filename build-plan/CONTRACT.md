@@ -88,7 +88,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=
 SUPABASE_PROJECT_REF=
 NEXT_PUBLIC_POSTHOG_KEY=
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com   # or https://eu.i.posthog.com for an EU project
 ```
 
 ## Out of scope

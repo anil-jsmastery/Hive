@@ -13,7 +13,21 @@
 
 ## Do it with the PostHog MCP
 
-Ask the PostHog MCP to create a multivariate feature flag with key `publish-flow-v2`, variants `control` and `test` at 50% each, released to 100% of users, and an experiment on that flag with `skill_published` as the goal metric. Then confirm both exist in the PostHog app.
+1. **Create the experiment, which creates its flag.** Use the PostHog MCP's experiment tool (`experiment-create`) in one call; don't create the flag separately. Settings:
+
+   | Setting | Value |
+   | --- | --- |
+   | Name | `Publish flow v2` |
+   | Flag key | `publish-flow-v2` |
+   | Variants | `control` 50%, `test` 50% |
+   | Release condition | 100% of users, no property filters |
+   | Goal metric | A funnel from exposure to `skill_published` (did an exposed builder publish?), where an increase is good |
+
+2. **Include the swarm in the results.** New experiments filter out test accounts, and Step 15's filter removes everything tagged `cohort: swarm-…`. Here the swarm *is* the traffic, so turn **Filter test accounts off** for this experiment. Do it on purpose and say so: in a real launch you'd keep test traffic out.
+
+3. **Launch it.** A draft experiment keeps its flag inactive, so `getFlag` returns nothing and everyone falls back to `control`. Launch the experiment (through the MCP or in the PostHog app) before the checks. There are no real users yet, so launching affects only test accounts and the swarm.
+
+4. **Confirm both exist in the PostHog app:** the flag is active, and the experiment is running with the funnel metric.
 
 ## Code
 
@@ -28,8 +42,10 @@ const variant: Variant = flag === 'test' ? 'test' : 'control';
 
 ## Checks
 
-- Two test users land in different variants.
+- The experiment "Publish flow v2" is **running** (not draft), its flag `publish-flow-v2` is active, and **Filter test accounts** is off for this experiment.
+- Two test users land in different variants. (With 50/50 it can take a few users to get one of each.)
 - Their `publish_started` and `skill_published` events carry the matching `variant`.
+- The experiment page shows **exposures** for those test users. If it shows none, open the experiment's exposure settings and use the `$feature_flag_called` event for `publish-flow-v2`, which is what the server-side `getFlag` call sends.
 
 ## Update project memory
 
@@ -37,7 +53,7 @@ Append this block to the end of `MEMORY.md`, **VERBATIM**:
 
 ```md
 ## After step 18
-- Feature flag publish-flow-v2 (control/test, 50/50) and its experiment, created via the PostHog MCP. /publish picks the variant on the server with getFlag().
+- Experiment "Publish flow v2" (created with its flag publish-flow-v2 in one PostHog MCP call): control/test 50/50, goal = funnel from exposure to skill_published, test-account filter off so the swarm counts, launched. /publish picks the variant on the server with getFlag().
 ```
 
 ## Finish this step

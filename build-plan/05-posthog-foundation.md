@@ -14,7 +14,7 @@
 ## Dashboard checklist (PostHog)
 
 1. Create a **new project** named `Hive`, used only for this app.
-2. Copy the project API key and host into `.env.local` as `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST`.
+2. Copy the project API key and host into `.env.local` as `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST`. The host depends on your project's region: `https://us.i.posthog.com` or `https://eu.i.posthog.com` (your PostHog address shows which: `us.posthog.com` or `eu.posthog.com`). The wrong region makes every server event and flag call fail.
 3. **Settings → Project → Web analytics:**
 
    | Setting | Value | Why |
