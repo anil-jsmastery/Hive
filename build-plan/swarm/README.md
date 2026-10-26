@@ -85,11 +85,11 @@ node swarm/run.mjs --url=https://your-app.vercel.app --cohort=T --agents=100 --o
 
 ## Is the model good enough?
 
-After the 10-agent batch, read the **Reliability** line and `swarm/results/summary.json`:
+After the 10-agent batch, read the **Reliability** line and the run's `summary.json` (the last line of the output gives its path):
 
 - `crashed` should be 0, and `parseErrors` close to 0.
 - If many agents give up early or fail at simple goals (installing a skill), move up one model tier and run the batch again.
-- Read a few `thought` lines in `swarm/results/agents.jsonl`: they should sound like a person trying to get something done.
+- Read a few `thought` lines in the run's `agents.jsonl`: they should sound like a person trying to get something done.
 - Signing up takes about 12 steps, so step limits (30 for consumers, 36 to 60 for builders) leave room for the goal itself. If agents still run out of steps right before succeeding, that's friction worth looking at in the product, not a reason to raise the limits further.
 
 ## Personas
@@ -115,4 +115,4 @@ Agents sign up with `agent-<cohort>-<id>+clerk_test@example.com` and code `42424
 | `evidence.mjs` | Read-only success checks in Supabase |
 | `cleanup.mjs` | Deletes swarm test accounts, their teams and their data |
 | `prices.json` | Prices per million tokens. Never guessed |
-| `state/`, `results/` | Saved sessions and run results. Both git-ignored |
+| `state/`, `results/` | Saved sessions, and one results folder per run (`results/<run>-<start time>/` with `summary.json` and `agents.jsonl`), so runs never overwrite each other. Both git-ignored |

@@ -5,7 +5,7 @@
 //   node swarm/run.mjs --url=... --return-wave=A --cohort-size=300
 //   node swarm/run.mjs --url=... --cohort=T --agents=40 --only=builder
 //
-// Prints one line per agent. Details go to swarm/results/.
+// Prints one line per agent. Details go to swarm/results/<run>-<start time>/.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,7 +37,10 @@ const MODEL = arg.model || process.env.SWARM_MODEL || '';
 const HEADED = arg.headed === 'true';
 const ONLY = arg.only ? String(arg.only).split(',').map((x) => x.trim()) : null;
 const STATE_DIR = path.join(HERE, 'state');
-const OUT_DIR = path.join(HERE, 'results');
+// Every run gets its own results folder, so runs never overwrite each other.
+const RUN_NAME = RETURN_OF ? `return-wave-${RETURN_OF}` : `cohort-${COHORT}`;
+const STAMP = new Date().toISOString().slice(0, 16).replace(/[-:]/g, '').replace('T', '-');
+const OUT_DIR = path.join(HERE, 'results', `${RUN_NAME}-${STAMP}`);
 
 const fail = (msg) => { console.error(msg); process.exit(1); };
 if (!URL_BASE) fail('Pass --url=<your deployed Hive URL>.');
@@ -310,7 +313,7 @@ const priced = results.every((r) => r.priceKnown);
 const summary = {
   ranAt: new Date().toISOString(),
   target: URL_BASE,
-  run: RETURN_OF ? `return-wave-${RETURN_OF}` : `cohort-${COHORT}`,
+  run: RUN_NAME,
   model: MODEL,
   agents: results.length,
   wallClockMinutes: round((Date.now() - runStart) / 60000, 1),
@@ -335,4 +338,4 @@ console.log(`Reliability: ${summary.reliability.crashed} crashed, ${summary.reli
 for (const [v, g] of Object.entries(byVariant)) {
   console.log(`  ${v.padEnd(18)} ${String(g.agents).padStart(3)} agents  success ${g.successRate.padStart(4)}${g.unverified ? ` (${g.unverified} unverified)` : ''}  ${g.avgSteps} steps  $${g.avgCostUSD}/agent`);
 }
-console.log('Details: swarm/results/summary.json and swarm/results/agents.jsonl');
+console.log(`Details: ${path.relative(path.join(HERE, '..'), OUT_DIR)}/summary.json and agents.jsonl`);
