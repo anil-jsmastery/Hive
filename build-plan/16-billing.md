@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
 - **For teams:** when a team is active, `<PricingTable for="organization" />`. Otherwise `EmptyState` with title "No team selected", body "Create or switch to a team to see team plans." and `<OrganizationSwitcher hidePersonal />` as the action.
 - **Tracking:** `<TrackOnMount key={tab} event="pricing_viewed" properties={{ tab }} />`, so switching tabs sends a new event.
 
-**"Visibility" field** in the publish form, after Tags: a `RadioGroup` named `visibility`, label "Visibility". Like every field in this form, it must keep its value after a submit that shows the paywall (the form submits through `onSubmit`, see Step 11).
+**"Visibility" field** in the publish form, after Tags: a `RadioGroup` for `visibility` (held in React state and submitted through `<input type="hidden" name="visibility" value={visibility} />`, as Step 11 describes), label "Visibility". Like every field in this form, it must keep its value after a submit that shows the paywall (the form submits through `onSubmit`, see Step 11).
 
 | Option | Help text |
 | --- | --- |

@@ -162,9 +162,21 @@ Each field error shows directly under its field. The form keeps its values after
 
 **Submit through `onSubmit`, not the form's `action` prop.** React 19 resets a form after its `action` runs. Text inputs come back from `state.values`, but shadcn `Select` and `RadioGroup` fields fall back to their defaults, so Stack (and later Publish as and Visibility) would empty out after every failed submit or paywall. Instead: `<form onSubmit={(e) => { e.preventDefault(); const data = new FormData(e.currentTarget); startTransition(() => formAction(data)); }}>`, where `formAction` comes from `useActionState` and `startTransition` from `useTransition`. Every field added to this form in later steps follows the same pattern.
 
+**Dropdowns and radio groups submit through your own hidden input.** shadcn's `Select` and `RadioGroup` (Radix) don't submit their value directly: they keep a hidden native control in sync, and that copy can fall out of sync with what's on screen, so the form sometimes sends no stack even though "Any" is showing. Keep each value in React state, give the `Select` no `name`, and submit it yourself:
+
+```tsx
+const [stack, setStack] = useState(state.values?.stack ?? '');
+// ...
+<Select value={stack} onValueChange={setStack}>…</Select>
+<input type="hidden" name="stack" value={stack} />
+```
+
+Later steps add Publish as (`owner`) and Visibility (`visibility`) the same way.
+
 ## Checks
 
 - Pick a Stack, leave Title empty and submit: the Title error shows and the Stack select still shows your choice.
+- Publishing works with each of the six stacks, including straight after a failed submit. "Choose a stack." never appears while a stack is showing.
 - Opening `/publish` sends one `publish_started` with `variant: control`.
 - Submitting an empty form shows 5 field errors and the top alert, and sends no `skill_published`.
 - A valid submit creates the skill, sends `skill_published` with `visibility: public` and `owner: personal`, and lands on the skill page with the "Published" toast.
@@ -178,6 +190,7 @@ Append this block to the end of `MEMORY.md`, **VERBATIM**:
 ## After step 11
 - /publish: PublishForm (useActionState) with title, description, stack, tags, Write/Preview content. publish_started on mount.
 - PublishForm submits through onSubmit + startTransition(formAction), never the form's action prop, so React 19 doesn't reset its Select and RadioGroup fields.
+- Select and RadioGroup values live in React state and are submitted through hidden inputs (name="stack", "owner", "visibility"); the Radix controls themselves have no name.
 - app/publish/actions.ts publishSkill(variant, ...): validates with lib/validation.ts, checks plan features for private skills (returns paywall), publishes as team via ensureOrganization() when owner=team, sends skill_published.
 - lib/organization.ts ensureOrganization() upserts the active Clerk organization into Supabase and identifies the PostHog group.
 ```

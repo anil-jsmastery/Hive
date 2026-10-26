@@ -29,8 +29,9 @@ cp swarm/.env.example swarm/.env      # then fill in SWARM_MODEL and your API ke
 ## Run
 
 ```bash
-# 10-agent test batch: always do this first with a new model
-node swarm/run.mjs --url=https://your-app.vercel.app --cohort=A --agents=10
+# 10-agent test batch: always do this first with a new model.
+# Test batches use cohort T, so they never mix with Cohort A's data.
+node swarm/run.mjs --url=https://your-app.vercel.app --cohort=T --agents=10
 
 # Cohort A: 300 agents arriving over 90 minutes
 node swarm/run.mjs --url=https://your-app.vercel.app --cohort=A --agents=300 --spread-minutes=90
@@ -53,6 +54,7 @@ node swarm/run.mjs --url=https://your-app.vercel.app --cohort=B --agents=300 --s
 | `--model` | `SWARM_MODEL` | Override the model for one run, as `provider:model` |
 | `--return-wave` | off | Re-run about half of a cohort from saved sessions, starting at `/dashboard` |
 | `--cohort-size` | 300 | With `--return-wave`: how many agents the original cohort had |
+| `--only` | all | Run only some personas, by type or variant, for example `--only=builder` or `--only=builder-private,builder-team` |
 | `--seed` | 42 | Same seed, same personas |
 | `--headed` | off | Show the browsers (for debugging) |
 
@@ -72,6 +74,14 @@ It only touches accounts with `agent-<cohort>-<id>+clerk_test@example.com` email
 ## How agents stay visible to PostHog
 
 Headless Chrome announces itself (`navigator.webdriver` and a "HeadlessChrome" browser brand), and posthog-js drops those visitors as bots before any event is sent. The harness launches Chrome without the automation flag and reports a normal browser brand, so the sessions are recorded. The agents aren't hidden: every event carries `cohort: swarm-<name>`, and the test-account filter removes them in one click. Each browser also gets clipboard permission, because "Install" copies a command.
+
+## Retesting one part of the product
+
+To check a fix cheaply, run only the personas it affects. With `--agents=100 --only=builder` you get Cohort T's 25 builders (15 public, 5 private, 5 team) for about $0.15:
+
+```bash
+node swarm/run.mjs --url=https://your-app.vercel.app --cohort=T --agents=100 --only=builder
+```
 
 ## Is the model good enough?
 

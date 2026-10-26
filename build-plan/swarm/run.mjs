@@ -3,6 +3,7 @@
 //   node swarm/run.mjs --url=https://your-app.vercel.app --cohort=A --agents=10
 //   node swarm/run.mjs --url=... --cohort=A --agents=300 --spread-minutes=90
 //   node swarm/run.mjs --url=... --return-wave=A --cohort-size=300
+//   node swarm/run.mjs --url=... --cohort=T --agents=40 --only=builder
 //
 // Prints one line per agent. Details go to swarm/results/.
 import fs from 'node:fs';
@@ -34,6 +35,7 @@ const MAX_USD = Number(arg['max-usd'] || 10);
 const SEED = Number(arg.seed || 42);
 const MODEL = arg.model || process.env.SWARM_MODEL || '';
 const HEADED = arg.headed === 'true';
+const ONLY = arg.only ? String(arg.only).split(',').map((x) => x.trim()) : null;
 const STATE_DIR = path.join(HERE, 'state');
 const OUT_DIR = path.join(HERE, 'results');
 
@@ -53,6 +55,12 @@ if (RETURN_OF) {
   personas = buildPersonas({ n: AGENTS, cohort: COHORT, seed: SEED });
 }
 
+// --only=builder (or builder-private, consumer,...) runs just those personas.
+if (ONLY) {
+  personas = personas.filter((p) => ONLY.includes(p.type) || ONLY.includes(p.variant));
+  if (!personas.length) fail(`No personas match --only=${ONLY.join(',')}.`);
+}
+
 // Spread arrivals: each agent gets a start time within the window, never all at once.
 const rand = seeded(SEED + 7);
 const jobs = personas
@@ -69,7 +77,9 @@ Reply with one JSON object only, with these fields:
 - action: one of click, type, select, keyboard, press_enter, scroll, back, wait, done, give_up
 - target: the element id for click, type or select, otherwise ""
 - text: what to type, or the option to select, otherwise ""
-Use "keyboard" to type into whatever is focused (for example a verification code).
+"type" replaces everything in a field with your text. "keyboard" adds to whatever is focused:
+use it only for verification codes.
+To choose from a dropdown, use "select" with the dropdown's id and the exact option text.
 Field values are shown up to 160 characters; a longer value also shows its total length.
 If a field already holds your text, it is filled: don't type it again.
 Use "done" only when your goal is truly achieved. Use "give_up" when a real person like you would leave.

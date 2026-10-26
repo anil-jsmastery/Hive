@@ -31,7 +31,7 @@
 - **H2 "Team skills":** `SkillCard`s for skills where `org_id` = the team's id, newest first. RLS shows private team skills only to members with this team active.
 - Empty: `EmptyState` with title "No team skills yet" and body "Skills published for {team name} show up here."
 
-**"Publish as"** (only rendered when a team is active), placed directly after the Title field: a `Select` named `owner`, label "Publish as", options "Personal (@{handle})" with value `personal` and "{team name}" with value `team`. Default `personal`. Help text: "Team skills show your team’s name and live on its team page."
+**"Publish as"** (only rendered when a team is active), placed directly after the Title field: a `Select` for `owner` (held in React state and submitted through `<input type="hidden" name="owner" value={owner} />`, as Step 11 describes), label "Publish as", options "Personal (@{handle})" with value `personal` and "{team name}" with value `team`. Default `personal`. Help text: "Team skills show your team’s name and live on its team page."
 
 **Dashboard "Team skills"** (only when a team is active), after "Your forks": H2 "Team skills: {team name}", `SkillCard`s for that team. Empty: title "No team skills yet", body "Publish a skill as your team to see it here.", action button "Publish a skill" to `/publish`.
 
