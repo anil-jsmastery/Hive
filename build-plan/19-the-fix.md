@@ -96,13 +96,21 @@ When every check passes, append the memory block below and commit as `step 19: t
 
 ## Run the experiment (after the commit)
 
-1. **Tag and deploy** (the user, rule 11): `git tag step-19 && git push origin main --tags`, then wait until Vercel shows the new deployment as Ready.
+1. **Push, tag and confirm the deploy** (the user, rule 11): `git push origin main`, `git tag step-19`, `git push origin step-19`. Wait until Vercel shows the new deployment as Ready **and** its commit is `step 19: the fix`. Then, on the live site, open `/publish` as a test user in the `test` variant, submit an empty form and type a title: the title error must disappear. If it doesn't, the live site is still serving the old form, and a cohort would measure nothing.
 2. **Restart the experiment's clock.** In PostHog, reset the `publish-flow-v2` experiment (or move its start date to now), so exposures from testing don't count. Only Cohort B should be in the result.
-3. **Release Cohort B with the same size and spread as Cohort A,** so the two are comparable. Cohort A's settings are in its `summary.json`, under `settings`:
+3. **Release Cohort B: builders only, and enough of them.** The experiment compares control and test *inside* Cohort B; Cohort A was the baseline that showed what to fix, not part of the experiment. Only builders open the publish form, so other personas add cost and nothing else. Decide the sample size before you run:
+
+   | Run | Command | Builders | Per variant |
+   | --- | --- | --- | --- |
+   | Rehearsal | `--agents=160 --only=builder` | 40 | about 20 |
+   | Recorded video | `--agents=320 --only=builder` | 80 | about 40 |
+
    ```bash
    node swarm/cleanup.mjs --yes
-   node swarm/run.mjs --cohort=B --agents=<Cohort A's agents> --spread-minutes=<Cohort A's spreadMinutes> --url=<deployed URL>
+   node swarm/run.mjs --cohort=B --agents=320 --only=builder --spread-minutes=30 --url=<deployed URL>
    ```
+
+   Even 40 per variant only detects a large difference reliably (for example 20% against 50%), so "inconclusive, keep testing" is a possible and honest outcome.
 4. **Read the result** in PostHog (the experiment, or through the PostHog MCP server): `skill_published` divided by `publish_started` for control and for test, and whether the difference is significant.
 5. **Record the decision** as a new row in `DECISIONS.md`: the date, what you'll do (ship the change to everyone, keep testing, or drop it) and the numbers behind it. An inconclusive result is a valid result: write it down as such. Commit as `decision: publish-flow-v2 result`.
 
@@ -119,7 +127,7 @@ Append this block to the end of `MEMORY.md`, **VERBATIM**, before the `step 19: 
 ```md
 ## After step 19
 - publish-flow-v2 test variant: a field's error clears as soon as its value changes (components/publish/use-live-errors.ts, no effect). The control keeps errors until the next submit. No new events.
-- The experiment's result is recorded in DECISIONS.md once Cohort B has run (same size and spread as Cohort A).
+- The experiment's result is recorded in DECISIONS.md once Cohort B (builders only, sized for the experiment) has run against the deployed fix.
 ```
 
 ## Finish this step
