@@ -111,6 +111,8 @@ When every check passes, append the memory block below and commit as `step 19: t
    ```
 
    Even 40 per variant only detects a large difference reliably (for example 20% against 50%), so "inconclusive, keep testing" is a possible and honest outcome.
+
+   **Check the instrument before trusting the result.** In the run's `agents.jsonl`, builders who got stuck should be stuck on the product, not on the harness. If stuck builders have many failed actions around one control (a dropdown, say) and builders who published have none, the harness is distorting the experiment: fix the harness, restart the experiment's clock and run Cohort B again.
 4. **Read the result** in PostHog (the experiment, or through the PostHog MCP server): `skill_published` divided by `publish_started` for control and for test, and whether the difference is significant.
 5. **Record the decision** as a new row in `DECISIONS.md`: the date, what you'll do (ship the change to everyone, keep testing, or drop it) and the numbers behind it. An inconclusive result is a valid result: write it down as such. Commit as `decision: publish-flow-v2 result`.
 

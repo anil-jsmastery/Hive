@@ -106,6 +106,7 @@ function prompt(p, obs, history, step) {
     `PAGE: ${obs.url} | ${obs.title}`);
   if (obs.toasts) lines.push(`NOTIFICATIONS ON SCREEN: ${obs.toasts}`);
   if (obs.dialog) lines.push(`DIALOG: ${obs.dialog}`);
+  if (obs.openList) lines.push('A DROPDOWN LIST IS OPEN: pick an option, or it will close when you click elsewhere.');
   if (obs.errors) lines.push(`ERRORS SHOWN: ${obs.errors}`);
   lines.push(`TEXT: ${obs.text}`, 'ELEMENTS:', obs.items.join('\n') || '(none)', '',
     `Step ${step + 1} of at most ${p.budget}.`);
@@ -315,6 +316,15 @@ const summary = {
   target: URL_BASE,
   run: RUN_NAME,
   model: MODEL,
+  // The settings this run used, so the next cohort can match them exactly.
+  settings: {
+    agents: RETURN_OF ? Number(arg['cohort-size'] || 300) : AGENTS,
+    spreadMinutes: SPREAD_MIN,
+    concurrency: CONCURRENCY,
+    seed: SEED,
+    maxUsd: MAX_USD,
+    only: ONLY,
+  },
   agents: results.length,
   wallClockMinutes: round((Date.now() - runStart) / 60000, 1),
   totalCostUSD: priced ? round(spent) : 'add the model to swarm/prices.json',

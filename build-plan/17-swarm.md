@@ -62,6 +62,7 @@ The user fills in `swarm/.env` (rule 11): `SWARM_MODEL` and the API key for that
 | Ground truth | Success comes from evidence, never from what the agent claims: the "Install command copied" toast seen in the page, or rows in Supabase (skills, comments, stars) authored by the agent's profile |
 | Browser identity | posthog-js drops headless Chrome as a bot (it checks `navigator.webdriver` and the browser brands, not just the user agent). The harness launches Chrome without the automation flag and reports a normal browser brand and user agent, so sessions are recorded. Agents stay identifiable through `cohort: swarm-<name>` on every event |
 | Clipboard | Every agent's browser gets clipboard permission, because "Install" copies a command before showing its toast |
+| Dropdowns | shadcn/Radix dropdowns: the `select` action opens a list only if it isn't open already (clicking an open trigger closes it), picks the visible option, and leaves the list closed. Before any click outside an open list, the harness presses Escape, because the list's invisible overlay would swallow the click. The snapshot tells the agent when a list is open |
 | Step limits | Signing up takes about 12 steps, so limits leave room for the goal: consumers and curators 30, mobile 20, lurkers 8, builders 36, private builders 50, team builders 60, return visits 14 |
 
 ## Models (any LLM API)

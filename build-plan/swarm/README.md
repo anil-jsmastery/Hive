@@ -75,6 +75,15 @@ It only touches accounts with `agent-<cohort>-<id>+clerk_test@example.com` email
 
 Headless Chrome announces itself (`navigator.webdriver` and a "HeadlessChrome" browser brand), and posthog-js drops those visitors as bots before any event is sent. The harness launches Chrome without the automation flag and reports a normal browser brand, so the sessions are recorded. The agents aren't hidden: every event carries `cohort: swarm-<name>`, and the test-account filter removes them in one click. Each browser also gets clipboard permission, because "Install" copies a command.
 
+## How agents handle dropdowns
+
+shadcn/Radix dropdowns behave differently from a plain `<select>`, and two of their habits used to trip agents up (and distort results):
+
+- **Clicking the trigger of an open dropdown closes it.** The harness's `select` action now opens a dropdown only if it isn't open already, picks the option, and makes sure the list is closed afterwards.
+- **While a dropdown is open, an invisible layer covers the page,** so the next click only closes the dropdown. Before any click outside an open list, the harness presses Escape first, which is what a person does without thinking. The page snapshot also tells the agent when a list is open.
+
+If builders rack up failed actions around a dropdown, suspect the harness before the product: a person wouldn't get stuck there.
+
 ## Retesting one part of the product
 
 To check a fix cheaply, run only the personas it affects. With `--agents=100 --only=builder` you get Cohort T's 25 builders (15 public, 5 private, 5 team) for about $0.15:
@@ -115,4 +124,4 @@ Agents sign up with `agent-<cohort>-<id>+clerk_test@example.com` and code `42424
 | `evidence.mjs` | Read-only success checks in Supabase |
 | `cleanup.mjs` | Deletes swarm test accounts, their teams and their data |
 | `prices.json` | Prices per million tokens. Never guessed |
-| `state/`, `results/` | Saved sessions, and one results folder per run (`results/<run>-<start time>/` with `summary.json` and `agents.jsonl`), so runs never overwrite each other. Both git-ignored |
+| `state/`, `results/` | Saved sessions, and one results folder per run (`results/<run>-<start time>/` with `summary.json` and `agents.jsonl`), so runs never overwrite each other. `summary.json` records the run's settings (agents, spread, concurrency, seed), so the next cohort can match them. Both git-ignored |
