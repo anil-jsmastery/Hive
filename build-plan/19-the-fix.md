@@ -116,7 +116,18 @@ When every check passes, append the memory block below and commit as `step 19: t
 
    **Check the instrument before trusting the result.** In the run's `agents.jsonl`, builders who got stuck should be stuck on the product, not on the harness. If stuck builders have many failed actions around one control (a dropdown, say) and builders who published have none, the harness is distorting the experiment: fix the harness, restart the experiment's clock and run Cohort B again.
 4. **Read the result** in PostHog (the experiment, or through the PostHog MCP server): `skill_published` divided by `publish_started` for control and for test, and whether the difference is significant.
-5. **Record the decision** as a new row in `DECISIONS.md`: the date, what you'll do (ship the change to everyone, keep testing, or drop it) and the numbers behind it. An inconclusive result is a valid result: write it down as such. Commit as `decision: publish-flow-v2 result`.
+5. **Decide, then record it.** Significance is one input, not the whole decision. Weigh four things:
+
+   | Question | What to look at |
+   | --- | --- |
+   | Is the effect real? | The significance test, on the sample you declared before the run |
+   | Do we know why? | Replays: are the stuck builders stuck on the problem the fix targets? |
+   | What does being wrong cost? | Can the change break anything, or only fail to help? |
+   | Can we undo it? | A change behind a flag can be switched off instantly |
+
+   Write the decision as a new row in `DECISIONS.md`: the date, what you'll do (for example "ship the test variant to 100% through the flag and keep watching the funnel", "keep testing" or "drop it") and the evidence behind it, including how borderline it is. An inconclusive result is a valid result: write it down as such. Earlier rows stay as history. Commit the row on its own.
+
+6. **Act on the decision** (dashboard work, the user's job under rule 11). To ship, open the experiment in PostHog and use **Ship variant** with `test` (or end the experiment and ship it): the flag goes to 100% `test`, with no redeploy, because the flag is read on every request. Then sign in as a control test user and check that the title error now clears on the live site. Keep watching `publish_started` to `skill_published` for as long as the decision row says. To keep testing instead, leave the flag at 50/50 and plan the next run's sample before it starts.
 
 `DECISIONS.md` should already have the row recording why this fix was chosen (added after Cohort A, before Step 18). If it's missing, add it first:
 
