@@ -22,7 +22,9 @@ cp swarm/.env.example swarm/.env      # then fill in SWARM_MODEL and your API ke
 | OpenRouter (hundreds of models, one key) | `openrouter:<vendor/model>` | `SWARM_OPENROUTER_API_KEY` |
 | Any OpenAI-compatible API (Groq, Together, Mistral, xAI, Fireworks…) | `compat:<model id>` | `SWARM_API_KEY`, plus `SWARM_BASE_URL` (the base URL from the provider's docs) |
 
-  The harness asks every OpenAI-compatible provider for a strict JSON schema first. If a model rejects that, it falls back to JSON mode, then to reading the JSON from plain text, once per run.
+  The harness asks every OpenAI-compatible provider for a strict JSON schema first. If a model rejects that, it falls back to JSON mode, then to reading the JSON from plain text, once per run. Claude replies through one forced tool call (`act`) whose input is the action format, so its replies always parse too. Gemini uses its own response schema.
+
+- **One provider per run.** You can keep several keys in `swarm/.env`; only the provider in `SWARM_MODEL` is used, and the other keys are ignored. To try another model for a single run, add `--model=provider:model` (for example `--model=anthropic:claude-haiku-5-5`). Each run's `summary.json` records its model, and each run has its own results folder, so comparing models means comparing two folders. Never mix models inside one experiment.
 - **Keys stay in `swarm/.env`**, with a `SWARM_` prefix. Never export them in the terminal where your coding agent runs.
 - **The harness also reads `.env.local`** (project root) for the Clerk keys (testing tokens let agents past Clerk's bot protection) and the Supabase URL and secret key (read-only success checks).
 

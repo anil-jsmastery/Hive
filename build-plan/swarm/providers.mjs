@@ -6,8 +6,8 @@ import fs from 'node:fs';
 
 export const ACTIONS = ['click', 'type', 'select', 'keyboard', 'press_enter', 'scroll', 'back', 'wait', 'done', 'give_up'];
 
-// The reply every model must give. OpenAI and Gemini enforce it (structured output),
-// so replies always parse.
+// The reply every model must give. OpenAI and Gemini enforce it as structured output,
+// and Claude through a forced tool call, so replies always parse.
 const SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -116,9 +116,15 @@ async function request(provider, model, system, user) {
       { authorization: `Bearer ${process.env[KEYS[provider]]}` }, openaiLikeBody(provider, model, system, user));
   }
   if (provider === 'anthropic') {
+    const body = { model, max_tokens: 400, system, messages: [{ role: 'user', content: user }] };
+    // Claude replies by calling one forced tool whose input schema is the action format,
+    // so every reply arrives as a parsed object. Falls back to plain text if rejected.
+    if (!dropped.has(`anthropic:${model}:tool`)) {
+      body.tools = [{ name: 'act', description: 'Your next action on the page.', input_schema: SCHEMA }];
+      body.tool_choice = { type: 'tool', name: 'act' };
+    }
     return post('https://api.anthropic.com/v1/messages',
-      { 'x-api-key': process.env[KEYS.anthropic], 'anthropic-version': '2023-06-01' },
-      { model, max_tokens: 400, system, messages: [{ role: 'user', content: user }] });
+      { 'x-api-key': process.env[KEYS.anthropic], 'anthropic-version': '2023-06-01' }, body);
   }
   if (provider === 'gemini') {
     return post(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -145,8 +151,11 @@ async function request(provider, model, system, user) {
 
 function parse(provider, j) {
   if (provider === 'anthropic') {
+    const tool = (j.content || []).find((b) => b.type === 'tool_use');
     return {
-      text: (j.content || []).filter((b) => b.type === 'text').map((b) => b.text).join(''),
+      text: tool
+        ? JSON.stringify(tool.input)
+        : (j.content || []).filter((b) => b.type === 'text').map((b) => b.text).join(''),
       inTok: j.usage?.input_tokens || 0,
       outTok: j.usage?.output_tokens || 0,
     };
@@ -196,6 +205,11 @@ export async function callModel(spec, system, user) {
       const after = Number(res.headers.get('retry-after'));
       await sleep(after > 0 ? after * 1000 : 1500 * 2 ** attempt + Math.random() * 500);
       continue;
+    }
+    if (res.status === 400 && provider === 'anthropic' && !dropped.has(`anthropic:${model}:tool`)) {
+      const msg = (await res.text()).toLowerCase();
+      if (msg.includes('tool')) { dropped.add(`anthropic:${model}:tool`); continue; }
+      throw new Error(`anthropic HTTP 400: ${msg.slice(0, 200)}`);
     }
     if ((res.status === 400 || res.status === 422) && OPENAI_LIKE[provider]) {
       const msg = (await res.text()).toLowerCase();
